@@ -35,7 +35,7 @@ To auto-copy to your Among Us install, set the `AmongUsLatest` environment varia
 
 ## Releasing
 
-Push a tag like `v1.0.3`. The GitHub Actions workflow stamps the version into the source, builds, and publishes a release with `HostFixPlugin.dll` attached. The auto-updater picks it up from there.
+Push a tag like `v1.0.0`. The GitHub Actions workflow stamps the version into the source, builds, and publishes a release with `HostFixPlugin.dll` attached. The auto-updater picks it up from there.
 
 ## Installation
 
