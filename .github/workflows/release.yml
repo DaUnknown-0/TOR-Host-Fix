@@ -1,6 +1,6 @@
 name: Build & Release
 
-# Pushe einen Tag wie "v1.0.3", um automatisch zu bauen und ein Release
+# Pushe einen Tag wie "v1.0.0", um automatisch zu bauen und ein Release
 # mit der HostFixPlugin.dll als Asset zu erstellen.
 on:
   push:

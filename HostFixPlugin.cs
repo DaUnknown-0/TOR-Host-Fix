@@ -46,7 +46,7 @@ public class HostFixPlugin : BasePlugin
 {
     public const string PluginGuid = "com.trackerteam.hostfix";
     public const string PluginName = "TOR Host Fix";
-    public const string PluginVersion = "1.0.3";
+    public const string PluginVersion = "1.0.0";
     public static readonly System.Version Version = System.Version.Parse(PluginVersion);
 
     public static ManualLogSource Logger { get; private set; }
