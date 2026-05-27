@@ -10,14 +10,15 @@
  *   2. Any host-only role/modifier/target assignment exception in the draft
  *      coroutine (covers Guesser gamemode, Lawyer target, and modifiers)
  *   3. Snitch reveal missing an evil HOST (TOR resets the room map mid-prefix,
- *      dropping the host's early ShareRoom — re-broadcast it after the reset)
+ *      dropping the host's early ShareRoom — the host re-broadcasts its room on a
+ *      short delay so it lands after the reset, inside the reveal window)
  *
  * Strategy: minimal, defensive patches. Don't replace TOR methods — just
  * guard them with try-catch and reset stuck state. This way, if TOR updates
  * its internals, the worst that happens is our patches become no-ops.
  *
- * Note: fixes 1 & 2 only matter on the host's machine; fix 3 runs on every
- * client (each re-broadcasts its own room) and corrects the host's entry.
+ * Note: all fixes run host-only. Fix 4 works host-only because the re-broadcast is
+ * a normal ShareRoom RPC that TOR's own handler processes on the Snitch's client.
  */
 
 global using Il2CppInterop.Runtime;
@@ -84,7 +85,7 @@ public class HostFixPlugin : BasePlugin
         // Applied automatically via [HarmonyPatch] attribute below
         harmony.PatchAll(typeof(HudManagerSafetyNet));
 
-        // --- Fix 4: Snitch reveal misses an evil host (re-broadcast room after TOR's reset) ---
+        // --- Fix 4: Snitch reveal misses an evil host (host re-broadcasts its room after TOR's reset) ---
         if (SnitchSnitchField != null)
         {
             harmony.PatchAll(typeof(SnitchHostRoomFix));
@@ -302,6 +303,10 @@ public class HostFixPlugin : BasePlugin
                     return;
                 }
 
+                // Fix 4's delayed Snitch re-broadcast. Runs regardless of the draft state below
+                // (the draft is idle during meetings), so flush it before the isRunning early-out.
+                SnitchHostRoomFix.Tick();
+
                 bool isRunning = (bool)RoleDraftIsRunningField.GetValue(null);
                 if (!isRunning)
                 {
@@ -381,17 +386,24 @@ public class HostFixPlugin : BasePlugin
     //
     // TOR's StartMeeting prefix has every client broadcast its room via the
     // ShareRoom RPC, then resets Snitch.playerRoomMap at the END of that same
-    // prefix. The host initiates the meeting, so its prefix runs first and its
-    // ShareRoom reaches the Snitch BEFORE the Snitch's own prefix runs the reset
-    // — wiping the host's entry. Non-host players send slightly later (after
-    // receiving RpcStartMeeting), so their entries survive. The Chat-mode reveal
-    // lists each evil player's role + room but skips anyone missing from
-    // playerRoomMap, so an evil host is systematically left out.
+    // prefix. The host initiates the meeting, so its ShareRoom (StartRpcImmediately)
+    // reaches the Snitch BEFORE the host's own (batched) RpcStartMeeting — i.e.
+    // before the Snitch's prefix runs the reset, which then wipes the host's entry.
+    // Non-host players send after receiving RpcStartMeeting, so their entries
+    // survive. The Chat-mode reveal skips anyone missing from playerRoomMap, so an
+    // evil host is systematically left out.
     //
-    // This postfix runs AFTER TOR's prefix (i.e. after the reset), re-broadcasting
-    // the local player's room so it lands in the freshly-reset map and reaches the
-    // Snitch within its ~0.4s reveal window. (Map mode uses live positions and is
-    // unaffected.) Gated on a Snitch being in play, read via reflection.
+    // Fix: the host re-broadcasts its room on a short delay. Host-only by design —
+    // TOR's own ShareRoom handler (present on every client via TOR) writes it into
+    // the Snitch's playerRoomMap, so the Snitch needs no extra plugin. The delay
+    // makes the re-send leave the host AFTER its batched RpcStartMeeting, so it lands
+    // in the Snitch's freshly-reset map and still arrives inside the ~0.4s reveal
+    // window. (Map mode uses live positions and is unaffected.) Gated on a Snitch
+    // being in play, read via reflection.
+    //
+    // NOTE: a fully timing-independent variant (shadow-copying ShareRoom and writing
+    // the host entry back after the reset) would have to run on the SNITCH's client,
+    // so it only works if every player installs this plugin — not in host-only mode.
     // ========================================================================
 
     [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.StartMeeting))]
@@ -400,19 +412,35 @@ public class HostFixPlugin : BasePlugin
         // TOR's CustomRPC.ShareRoom value (enum is internal to TOR; stable in 4.8.0).
         private const byte ShareRoomRpcId = 167;
 
+        // Delay before the host re-broadcasts. Must clear the host's batched RpcStartMeeting (a frame)
+        // yet stay inside the Snitch's ~0.4s reveal lerp. 0.15s leaves ~0.25s of window for jitter.
+        private const float RebroadcastDelay = 0.15f;
+
+        private static bool _pending;
+        private static float _sendAt;
+
         [HarmonyPostfix]
         public static void Postfix()
         {
+            // The host always initiates the meeting, so only its room loses the race — schedule the
+            // delayed re-send on the host only, and only when a Snitch is actually in play.
+            if (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost) return;
+            if (SnitchSnitchField == null || SnitchSnitchField.GetValue(null) == null) return;
+            _pending = true;
+            _sendAt = Time.realtimeSinceStartup + RebroadcastDelay;
+        }
+
+        // Flushed once per frame from HudManagerSafetyNet (a host-only HudManager.Update postfix).
+        public static void Tick()
+        {
+            if (!_pending || Time.realtimeSinceStartup < _sendAt) return;
+            _pending = false;
             try
             {
-                // Only act when a Snitch actually exists this game.
-                if (SnitchSnitchField == null || SnitchSnitchField.GetValue(null) == null) return;
-
                 var hud = HudManager.Instance;
                 var roomTracker = hud != null ? hud.roomTracker : null;
-                if (roomTracker == null) return;
-
-                byte roomId = roomTracker.LastRoom != null ? (byte)roomTracker.LastRoom.RoomId : byte.MinValue;
+                byte roomId = roomTracker != null && roomTracker.LastRoom != null
+                    ? (byte)roomTracker.LastRoom.RoomId : byte.MinValue;
 
                 MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(
                     PlayerControl.LocalPlayer.NetId, ShareRoomRpcId, SendOption.Reliable, -1);
