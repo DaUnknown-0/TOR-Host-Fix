@@ -166,7 +166,8 @@ namespace HostFixPlugin {
             if (!template) return;
 
             var button = Instantiate(template, null);
-            button.GetComponent<AspectPosition>().anchorPoint = new Vector2(0.458f, 0.21f);
+            // Stacked above TOR's updater (0.124) and the Chance updater (0.21) to avoid overlap.
+            button.GetComponent<AspectPosition>().anchorPoint = new Vector2(0.458f, 0.30f);
 
             PassiveButton passiveButton = button.GetComponent<PassiveButton>();
             passiveButton.OnClick = new Button.ButtonClickedEvent();
@@ -192,15 +193,12 @@ namespace HostFixPlugin {
 
         [HideFromIl2Cpp]
         public IEnumerator CoShowAnnouncement(string announcement, bool show = true, string shortTitle = "Host Fix Update", string title = "", string date = "") {
-            // Stagger 1 s behind other mods' popups so Chance Modifier always shows first
-            yield return new WaitForSeconds(1f);
-            // Wait until no other announcement popup is active (up to 30 s)
-            for (float t = 30f; t > 0f; t -= 0.5f) {
-                bool anyActive = false;
-                foreach (var p in UnityEngine.Object.FindObjectsOfType<AnnouncementPopUp>(true))
-                    if (p.gameObject.activeSelf) { anyActive = true; break; }
-                if (!anyActive) break;
-                yield return new WaitForSeconds(0.5f);
+            // Stagger behind other mods so Chance Modifier's popup appears first.
+            yield return new WaitForSeconds(1.5f);
+            // Wait until no announcement popup is currently visible (up to 30 s).
+            for (float t = 30f; t > 0f; t -= 0.25f) {
+                if (UnityEngine.Object.FindObjectOfType<AnnouncementPopUp>() == null) break;
+                yield return new WaitForSeconds(0.25f);
             }
             yield return new WaitForSeconds(0.2f);
 
