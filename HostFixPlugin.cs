@@ -445,7 +445,7 @@ public class HostFixPlugin : BasePlugin
             string text = __instance.text.text;
             if (string.IsNullOrEmpty(text)) return;
 
-            string line = $"<color=#1FA8FF>Host Fix</color> v{PluginVersion}";
+            string line = $"<color=#1FA8FF>Host Fix</color> v{PluginVersion} - Modded by <color=#FCCE03FF>DaUnknown</color>";
             int nl = text.IndexOf('\n');
             __instance.text.text = nl >= 0
                 ? text.Substring(0, nl + 1) + line + "\n" + text.Substring(nl + 1)
