@@ -437,6 +437,9 @@ public class HostFixPlugin : BasePlugin
     [HarmonyPriority(Priority.Low)] // run after TOR's own PingTracker postfix
     public static class VersionDisplayPatch
     {
+        // Toggled by clicking the "Host Fix" name in the version display.
+        private static bool showCredits;
+
         public static void Postfix(PingTracker __instance)
         {
             if (__instance == null || __instance.text == null) return;
@@ -445,7 +448,19 @@ public class HostFixPlugin : BasePlugin
             string text = __instance.text.text;
             if (string.IsNullOrEmpty(text)) return;
 
-            string line = $"<color=#1FA8FF>Host Fix</color> v{PluginVersion} - Modded by <color=#FCCE03FF>DaUnknown</color>";
+            // Click the mod name to show/hide the credit line.
+            if (Input.GetMouseButtonDown(0))
+            {
+                Camera cam = __instance.text.canvas != null
+                    && __instance.text.canvas.renderMode != RenderMode.ScreenSpaceOverlay
+                    ? __instance.text.canvas.worldCamera : null;
+                int link = TMPro.TMP_TextUtilities.FindIntersectingLink(__instance.text, Input.mousePosition, cam);
+                if (link != -1 && __instance.text.textInfo.linkInfo[link].GetLinkID() == "hostFixCredits")
+                    showCredits = !showCredits;
+            }
+
+            string line = $"<link=\"hostFixCredits\"><color=#1FA8FF>Host Fix</color> v{PluginVersion}</link>";
+            if (showCredits) line += "\n<size=70%>Modded by <color=#FCCE03FF>DaUnknown</color></size>";
             int nl = text.IndexOf('\n');
             __instance.text.text = nl >= 0
                 ? text.Substring(0, nl + 1) + line + "\n" + text.Substring(nl + 1)
