@@ -448,23 +448,46 @@ public class HostFixPlugin : BasePlugin
             string text = __instance.text.text;
             if (string.IsNullOrEmpty(text)) return;
 
-            // Click the mod name to show/hide the credit line.
+            // Click the mod name to toggle the credit line. PingTracker.text is a world-space
+            // TextMeshPro (no canvas), so the link raycast needs the rendering camera.
             if (Input.GetMouseButtonDown(0))
             {
-                Camera cam = __instance.text.canvas != null
-                    && __instance.text.canvas.renderMode != RenderMode.ScreenSpaceOverlay
-                    ? __instance.text.canvas.worldCamera : null;
+                Camera cam = Camera.main;
+                var canvas = __instance.text.canvas;
+                if (canvas != null)
+                    cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null
+                        : (canvas.worldCamera != null ? canvas.worldCamera : Camera.main);
                 int link = TMPro.TMP_TextUtilities.FindIntersectingLink(__instance.text, Input.mousePosition, cam);
                 if (link != -1 && __instance.text.textInfo.linkInfo[link].GetLinkID() == "hostFixCredits")
                     showCredits = !showCredits;
             }
 
+            // Clickable mod name, inserted just below the "TheOtherRoles vX" line.
             string line = $"<link=\"hostFixCredits\"><color=#1FA8FF>Host Fix</color> v{PluginVersion}</link>";
-            if (showCredits) line += "\n<size=70%>Modded by <color=#FCCE03FF>DaUnknown</color></size>";
             int nl = text.IndexOf('\n');
-            __instance.text.text = nl >= 0
+            text = nl >= 0
                 ? text.Substring(0, nl + 1) + line + "\n" + text.Substring(nl + 1)
                 : text + "\n" + line;
+
+            // When toggled on, show the credit directly under TOR's "Design by Bavari" line.
+            if (showCredits)
+            {
+                string credit = "\n<size=70%>Modded by <color=#FCCE03FF>DaUnknown</color></size>";
+                int anchor = text.IndexOf("Bavari");
+                if (anchor >= 0)
+                {
+                    int lineEnd = text.IndexOf('\n', anchor);
+                    text = lineEnd >= 0
+                        ? text.Substring(0, lineEnd) + credit + text.Substring(lineEnd)
+                        : text + credit;
+                }
+                else
+                {
+                    text += credit;
+                }
+            }
+
+            __instance.text.text = text;
         }
     }
 }
