@@ -58,36 +58,6 @@ public class HostFixPlugin : BasePlugin
     internal static FieldInfo SnitchSnitchField;
     internal static Assembly TORAssembly;
 
-    // Cross-mod handle: Useful TOR Stuff's SnitchClientFixActive flag. Resolved lazily because
-    // plugin load order isn't guaranteed — the Useful TOR Stuff assembly may load after HostFix.
-    private static FieldInfo _usefulSnitchFixField;
-    private static bool _usefulLookupDone;
-
-    // True when Useful TOR Stuff's permanent client-side Snitch fix is active (every player has it).
-    // In that case HostFix's host-only Fix 4 stands down to avoid double-fixing.
-    private static bool UsefulSnitchFixActive()
-    {
-        try
-        {
-            if (!_usefulLookupDone)
-            {
-                var asm = AppDomain.CurrentDomain.GetAssemblies()
-                    .FirstOrDefault(a => a.GetName().Name == "UsefulTORStuff");
-                if (asm != null)
-                {
-                    _usefulSnitchFixField = asm.GetType("UsefulTORStuff.UsefulTORStuffPlugin")
-                        ?.GetField("SnitchClientFixActive", BindingFlags.Public | BindingFlags.Static);
-                    _usefulLookupDone = true; // latch only once the assembly exists
-                }
-            }
-            return _usefulSnitchFixField != null && (bool)_usefulSnitchFixField.GetValue(null);
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     public override void Load()
     {
         Logger = Log;
@@ -428,14 +398,17 @@ public class HostFixPlugin : BasePlugin
     // the Snitch's playerRoomMap, so the Snitch needs no extra plugin. The delay
     // makes the re-send leave the host AFTER its batched RpcStartMeeting, so it lands
     // in the Snitch's freshly-reset map and still arrives inside the ~0.4s reveal
-    // window. (Map mode uses live positions and is unaffected.) Gated on a Snitch
+    // window. (Map mode uses live positions and is unaffected.) Gated only on a Snitch
     // being in play, read via reflection.
     //
-    // NOTE: a fully timing-independent variant (shadow-copying ShareRoom and writing
-    // the host entry back after the reset) runs on the SNITCH's client, so it only works
-    // if every player installs the mod. That variant now lives in the "Useful TOR Stuff"
-    // mod (SnitchRoomPersistFix), gated on its all-players handshake. When it is active,
-    // UsefulSnitchFixActive() returns true and this host-only Fix 4 stands down.
+    // This host-side re-broadcast is ALWAYS on (when a Snitch is in play). The host is
+    // the only player whose entry the race drops, and re-sending from the host is the
+    // one mechanism the host fully controls and that fixes the reveal for EVERY Snitch,
+    // modded or not. Useful TOR Stuff also carries a client-side restore that runs on the
+    // Snitch's own machine; if both run they write the same host entry — idempotent. We do
+    // NOT stand down for it: that client-side restore only helps a modded Snitch and proved
+    // unreliable, so disabling the host re-broadcast when "everyone has the mod" removed the
+    // only dependable fix exactly when it was assumed unnecessary.
     // ========================================================================
 
     [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.StartMeeting))]
@@ -458,9 +431,6 @@ public class HostFixPlugin : BasePlugin
             // delayed re-send on the host only, and only when a Snitch is actually in play.
             if (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost) return;
             if (SnitchSnitchField == null || SnitchSnitchField.GetValue(null) == null) return;
-            // Stand down if Useful TOR Stuff's permanent client-side fix is active (everyone has it).
-            // Read live each meeting — the flag is only set once the lobby handshake completes.
-            if (UsefulSnitchFixActive()) return;
             _pending = true;
             _sendAt = Time.realtimeSinceStartup + RebroadcastDelay;
         }
@@ -482,6 +452,7 @@ public class HostFixPlugin : BasePlugin
                 writer.Write(PlayerControl.LocalPlayer.PlayerId);
                 writer.Write(roomId);
                 AmongUsClient.Instance.FinishRpcImmediately(writer);
+                Logger.LogInfo($"[Fix4] Re-broadcast host room {roomId} for player {PlayerControl.LocalPlayer.PlayerId}.");
             }
             catch (Exception ex)
             {
