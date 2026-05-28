@@ -37,7 +37,6 @@ using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using Hazel;
-using UsefulTORStuff;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -117,18 +116,22 @@ public class HostFixPlugin : BasePlugin
         // Self-updater: checks GitHub releases and offers an in-game update button.
         AddComponent<HostFixUpdater>();
 
-        // Registriere diese Mod in der Mod-Manager-Registry.
-        ModManagerRegistry.RegisterMod(new ModInfo {
-            Guid = PluginGuid,
-            Name = PluginName,
-            Version = Version,
-            RepositoryOwner = "DaUnknown-0",
-            RepositoryName = "TOR-Host-Fix",
-            ButtonColor = Color.cyan,
-            HasUpdate = () => HostFixUpdater.Instance?.HasUpdate() ?? false,
-            TriggerUpdate = () => HostFixUpdater.Instance?.TriggerUpdateFromManager(),
-            Enabled = enabled
-        });
+        // Registriere diese Mod in der Mod-Manager-Registry via AppDomain (keine Compile-Zeit-Referenz).
+        try {
+            var modData = new System.Collections.Generic.Dictionary<string, object> {
+                { "Guid", PluginGuid },
+                { "Name", PluginName },
+                { "Version", Version },
+                { "RepositoryOwner", "DaUnknown-0" },
+                { "RepositoryName", "TOR-Host-Fix" },
+                { "ButtonColor", Color.cyan },
+                { "Enabled", enabled }
+            };
+            AppDomain.CurrentDomain.SetData($"ModManager.RegisteredMod.{PluginGuid}", modData);
+            Logger.LogInfo($"Registered HostFixPlugin in Mod Manager registry.");
+        } catch (System.Exception ex) {
+            Logger.LogError($"Failed to register HostFixPlugin: {ex}");
+        }
 
         Logger.LogInfo($"{PluginName} v{PluginVersion} loaded — all patches applied.");
     }
