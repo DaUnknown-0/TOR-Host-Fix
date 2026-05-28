@@ -500,8 +500,13 @@ public class HostFixPlugin : BasePlugin
     [HarmonyPriority(Priority.Low)] // run after TOR's own PingTracker postfix
     public static class VersionDisplayPatch
     {
-        // Toggled by clicking the "Host Fix" name in the version display.
-        private static bool showCredits;
+        // Credit toggle is shared across all three of our mods via a process-wide AppDomain flag
+        // (no cross-assembly references) — clicking any mod name flips the same flag, so clicking
+        // another hides it again. Keep this key string identical in the other mods.
+        private const string CreditKey = "TORMods.DaUnknownCreditVisible";
+
+        private static bool CreditVisible() =>
+            AppDomain.CurrentDomain.GetData(CreditKey) is bool b && b;
 
         public static void Postfix(PingTracker __instance)
         {
@@ -511,7 +516,7 @@ public class HostFixPlugin : BasePlugin
             string text = __instance.text.text;
             if (string.IsNullOrEmpty(text)) return;
 
-            // Click the mod name to toggle the credit line. PingTracker.text is a world-space
+            // Click the mod name to toggle the shared credit line. PingTracker.text is a world-space
             // TextMeshPro (no canvas), so the link raycast needs the rendering camera.
             if (Input.GetMouseButtonDown(0))
             {
@@ -522,7 +527,7 @@ public class HostFixPlugin : BasePlugin
                         : (canvas.worldCamera != null ? canvas.worldCamera : Camera.main);
                 int link = TMPro.TMP_TextUtilities.FindIntersectingLink(__instance.text, Input.mousePosition, cam);
                 if (link != -1 && __instance.text.textInfo.linkInfo[link].GetLinkID() == "hostFixCredits")
-                    showCredits = !showCredits;
+                    AppDomain.CurrentDomain.SetData(CreditKey, !CreditVisible());
             }
 
             // Clickable mod name, inserted just below the "TheOtherRoles vX" line.
@@ -532,8 +537,9 @@ public class HostFixPlugin : BasePlugin
                 ? text.Substring(0, nl + 1) + line + "\n" + text.Substring(nl + 1)
                 : text + "\n" + line;
 
-            // When toggled on, show the credit directly under TOR's "Design by Bavari" line.
-            if (showCredits)
+            // Insert the shared credit under TOR's "Design by Bavari" line — but only if no other
+            // mod already added it this frame, so "Modded by DaUnknown" appears at most once.
+            if (CreditVisible() && !text.Contains("DaUnknown"))
             {
                 string credit = "\n<size=70%>Modded by <color=#FCCE03FF>DaUnknown</color></size>";
                 int anchor = text.IndexOf("Bavari");
