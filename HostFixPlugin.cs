@@ -19,6 +19,10 @@
  *
  * Note: all fixes run host-only. Fix 4 works host-only because the re-broadcast is
  * a normal ShareRoom RPC that TOR's own handler processes on the Snitch's client.
+ *
+ * Coordination with UsefulTORStuff: If UsefulTORStuff's Transpiler-Fix is active on
+ * all clients (checked via UsefulTORStuffPlugin.SnitchClientFixActive), Fix 4 stands
+ * down — the client-side structural fix is cleaner and makes the host fallback redundant.
  */
 
 global using Il2CppInterop.Runtime;
@@ -56,7 +60,9 @@ public class HostFixPlugin : BasePlugin
     internal static FieldInfo RoleDraftIsRunningField;
     internal static FieldInfo RoleDraftPickOrderField;
     internal static FieldInfo SnitchSnitchField;
+    internal static FieldInfo UsefulStuffSnitchClientFixActiveField;
     internal static Assembly TORAssembly;
+    internal static Assembly UsefulStuffAssembly;
 
     public override void Load()
     {
@@ -146,6 +152,21 @@ public class HostFixPlugin : BasePlugin
             SnitchSnitchField = snitchType?.GetField("snitch", BindingFlags.Public | BindingFlags.Static);
             if (SnitchSnitchField == null)
                 Logger.LogWarning("Snitch.snitch field not found — Snitch host-room fix will be skipped.");
+
+            // Try to resolve UsefulTORStuff's SnitchClientFixActive flag (best-effort).
+            // If present and true, we can stand down our host-only re-broadcast fallback.
+            UsefulStuffAssembly = AppDomain.CurrentDomain.GetAssemblies()
+                .FirstOrDefault(a => a.GetName().Name == "UsefulTORStuff");
+            if (UsefulStuffAssembly != null)
+            {
+                var usefulPluginType = UsefulStuffAssembly.GetType("UsefulTORStuff.UsefulTORStuffPlugin");
+                UsefulStuffSnitchClientFixActiveField = usefulPluginType?.GetField(
+                    "SnitchClientFixActive", BindingFlags.Public | BindingFlags.Static);
+                if (UsefulStuffSnitchClientFixActiveField != null)
+                    Logger.LogInfo("UsefulTORStuff detected — will coordinate Snitch fix with client-side patches.");
+                else
+                    Logger.LogWarning("UsefulTORStuff found but SnitchClientFixActive field not resolved.");
+            }
 
             Logger.LogInfo("TOR types resolved successfully.");
             return true;
@@ -401,14 +422,12 @@ public class HostFixPlugin : BasePlugin
     // window. (Map mode uses live positions and is unaffected.) Gated only on a Snitch
     // being in play, read via reflection.
     //
-    // This host-side re-broadcast is ALWAYS on (when a Snitch is in play). The host is
-    // the only player whose entry the race drops, and re-sending from the host is the
-    // one mechanism the host fully controls and that fixes the reveal for EVERY Snitch,
-    // modded or not. Useful TOR Stuff also carries a client-side restore that runs on the
-    // Snitch's own machine; if both run they write the same host entry — idempotent. We do
-    // NOT stand down for it: that client-side restore only helps a modded Snitch and proved
-    // unreliable, so disabling the host re-broadcast when "everyone has the mod" removed the
-    // only dependable fix exactly when it was assumed unnecessary.
+    // Coordination with UsefulTORStuff: If every client runs UsefulTORStuff with the
+    // Transpiler-Fix (checked via UsefulTORStuffPlugin.SnitchClientFixActive), this
+    // host-only fallback stands down — the Transpiler-Fix removes TOR's mid-meeting
+    // reset structurally (Lösung B), making the delayed re-broadcast redundant. When
+    // standing down, a log message confirms the client-side fix is active. If any
+    // client lacks the mod or the Transpiler-Fix isn't ready, the fallback runs as usual.
     // ========================================================================
 
     [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.StartMeeting))]
@@ -431,6 +450,26 @@ public class HostFixPlugin : BasePlugin
             // delayed re-send on the host only, and only when a Snitch is actually in play.
             if (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost) return;
             if (SnitchSnitchField == null || SnitchSnitchField.GetValue(null) == null) return;
+
+            // If UsefulTORStuff's Transpiler-Fix is active on all clients, stand down — the client-side
+            // fix is structurally cleaner and makes our host-only fallback redundant.
+            if (UsefulStuffSnitchClientFixActiveField != null)
+            {
+                try
+                {
+                    bool clientFixActive = Convert.ToBoolean(UsefulStuffSnitchClientFixActiveField.GetValue(null));
+                    if (clientFixActive)
+                    {
+                        Logger.LogInfo("[Fix4] UsefulTORStuff Transpiler-Fix active on all clients — standing down host re-broadcast.");
+                        return;
+                    }
+                }
+                catch
+                {
+                    // If reflection fails, proceed with the fallback (better safe than sorry)
+                }
+            }
+
             _pending = true;
             _sendAt = Time.realtimeSinceStartup + RebroadcastDelay;
         }
