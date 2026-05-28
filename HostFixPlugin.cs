@@ -58,6 +58,36 @@ public class HostFixPlugin : BasePlugin
     internal static FieldInfo SnitchSnitchField;
     internal static Assembly TORAssembly;
 
+    // Cross-mod handle: Useful TOR Stuff's SnitchClientFixActive flag. Resolved lazily because
+    // plugin load order isn't guaranteed — the Useful TOR Stuff assembly may load after HostFix.
+    private static FieldInfo _usefulSnitchFixField;
+    private static bool _usefulLookupDone;
+
+    // True when Useful TOR Stuff's permanent client-side Snitch fix is active (every player has it).
+    // In that case HostFix's host-only Fix 4 stands down to avoid double-fixing.
+    private static bool UsefulSnitchFixActive()
+    {
+        try
+        {
+            if (!_usefulLookupDone)
+            {
+                var asm = AppDomain.CurrentDomain.GetAssemblies()
+                    .FirstOrDefault(a => a.GetName().Name == "UsefulTORStuff");
+                if (asm != null)
+                {
+                    _usefulSnitchFixField = asm.GetType("UsefulTORStuff.UsefulTORStuffPlugin")
+                        ?.GetField("SnitchClientFixActive", BindingFlags.Public | BindingFlags.Static);
+                    _usefulLookupDone = true; // latch only once the assembly exists
+                }
+            }
+            return _usefulSnitchFixField != null && (bool)_usefulSnitchFixField.GetValue(null);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public override void Load()
     {
         Logger = Log;
@@ -402,8 +432,10 @@ public class HostFixPlugin : BasePlugin
     // being in play, read via reflection.
     //
     // NOTE: a fully timing-independent variant (shadow-copying ShareRoom and writing
-    // the host entry back after the reset) would have to run on the SNITCH's client,
-    // so it only works if every player installs this plugin — not in host-only mode.
+    // the host entry back after the reset) runs on the SNITCH's client, so it only works
+    // if every player installs the mod. That variant now lives in the "Useful TOR Stuff"
+    // mod (SnitchRoomPersistFix), gated on its all-players handshake. When it is active,
+    // UsefulSnitchFixActive() returns true and this host-only Fix 4 stands down.
     // ========================================================================
 
     [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.StartMeeting))]
@@ -426,6 +458,9 @@ public class HostFixPlugin : BasePlugin
             // delayed re-send on the host only, and only when a Snitch is actually in play.
             if (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost) return;
             if (SnitchSnitchField == null || SnitchSnitchField.GetValue(null) == null) return;
+            // Stand down if Useful TOR Stuff's permanent client-side fix is active (everyone has it).
+            // Read live each meeting — the flag is only set once the lobby handshake completes.
+            if (UsefulSnitchFixActive()) return;
             _pending = true;
             _sendAt = Time.realtimeSinceStartup + RebroadcastDelay;
         }
