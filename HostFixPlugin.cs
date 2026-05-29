@@ -31,13 +31,13 @@ global using Il2CppInterop.Runtime.InteropTypes;
 global using Il2CppInterop.Runtime.InteropTypes.Arrays;
 global using Il2CppInterop.Runtime.Injection;
 
+using System;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using Hazel;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -125,7 +125,8 @@ public class HostFixPlugin : BasePlugin
                 { "RepositoryOwner", "DaUnknown-0" },
                 { "RepositoryName", "TOR-Host-Fix" },
                 { "ButtonColor", Color.cyan },
-                { "Enabled", enabled }
+                { "Enabled", enabled },
+                { "RuntimeEnabled", true }
             };
             AppDomain.CurrentDomain.SetData($"ModManager.RegisteredMod.{PluginGuid}", modData);
             Logger.LogInfo($"Registered HostFixPlugin in Mod Manager registry.");

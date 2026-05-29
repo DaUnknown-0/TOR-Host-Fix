@@ -37,6 +37,16 @@ namespace HostFixPlugin {
         private bool _showPopUp = true;
         public List<GithubRelease> Releases;
 
+        // Download-Zustand für den Mod Manager. 0 = idle, 1 = downloading,
+        // 2 = success (restart required), 3 = error. Lebt in der Instanz, damit das
+        // Mod-Manager-UI ihn über Schließen/Öffnen hinweg abfragen kann.
+        private int _updateState;
+        private float _updateProgress;
+
+        // True sobald der GitHub-Release-Check abgeschlossen ist (Erfolg oder Fehler). Vom
+        // Mod Manager abgefragt, um die gesammelte Update-Ankündigung erst nach allen Checks zu zeigen.
+        private bool _checkCompleted;
+
         public void Awake() {
             if (Instance) Destroy(Instance);
             Instance = this;
@@ -52,10 +62,20 @@ namespace HostFixPlugin {
         }
 
         [HideFromIl2Cpp]
-        public void StartDownloadRelease(GithubRelease release) {
+        public void StartDownloadRelease(GithubRelease release, bool managerMode = false) {
             if (_busy) return;
-            this.StartCoroutine(CoDownloadRelease(release));
+            this.StartCoroutine(CoDownloadRelease(release, managerMode));
         }
+
+        // Reflection-/direkt-aufrufbare Getter für das Mod-Manager-UI.
+        [HideFromIl2Cpp]
+        public int GetUpdateState() => _updateState;
+
+        [HideFromIl2Cpp]
+        public float GetUpdateProgress() => _updateProgress;
+
+        [HideFromIl2Cpp]
+        public bool GetCheckCompleted() => _checkCompleted;
 
         [HideFromIl2Cpp]
         private IEnumerator CoCheckForUpdate() {
@@ -71,6 +91,7 @@ namespace HostFixPlugin {
             }
 
             if (www.isNetworkError || www.isHttpError) {
+                _checkCompleted = true;
                 _busy = false;
                 yield break;
             }
@@ -79,22 +100,31 @@ namespace HostFixPlugin {
             www.downloadHandler.Dispose();
             www.Dispose();
             Releases.Sort(SortReleases);
+            _checkCompleted = true;
             _busy = false;
         }
 
         [HideFromIl2Cpp]
-        private IEnumerator CoDownloadRelease(GithubRelease release) {
+        private IEnumerator CoDownloadRelease(GithubRelease release, bool managerMode) {
             _busy = true;
+            _updateState = 1;
+            _updateProgress = 0f;
 
-            var popup = Instantiate(TwitchManager.Instance.TwitchPopup);
-            popup.TextAreaTMP.fontSize *= 0.7f;
-            popup.TextAreaTMP.enableAutoSizing = false;
+            // Im Manager-Modus wird kein Among-Us-TwitchPopup erzeugt; der Mod Manager zeigt
+            // Fortschritt/Status selbst über GetUpdateState()/GetUpdateProgress() an.
+            GenericPopup popup = null;
+            GameObject button = null;
+            if (!managerMode) {
+                popup = Instantiate(TwitchManager.Instance.TwitchPopup);
+                popup.TextAreaTMP.fontSize *= 0.7f;
+                popup.TextAreaTMP.enableAutoSizing = false;
 
-            popup.Show();
+                popup.Show();
 
-            var button = popup.transform.GetChild(2).gameObject;
-            button.SetActive(false);
-            popup.TextAreaTMP.text = "Updating Host Fix\nPlease wait...";
+                button = popup.transform.GetChild(2).gameObject;
+                button.SetActive(false);
+                popup.TextAreaTMP.text = "Updating Host Fix\nPlease wait...";
+            }
 
             var asset = release.Assets.Find(FilterPluginAsset);
             var www = new UnityWebRequest();
@@ -104,19 +134,27 @@ namespace HostFixPlugin {
             var operation = www.SendWebRequest();
 
             while (!operation.isDone) {
-                int stars = Mathf.CeilToInt(www.downloadProgress * 10);
-                string progress = $"Updating Host Fix\nPlease wait...\nDownloading...\n{new String((char)0x25A0, stars) + new String((char)0x25A1, 10 - stars)}";
-                popup.TextAreaTMP.text = progress;
+                _updateProgress = www.downloadProgress;
+                if (!managerMode) {
+                    int stars = Mathf.CeilToInt(www.downloadProgress * 10);
+                    string progress = $"Updating Host Fix\nPlease wait...\nDownloading...\n{new String((char)0x25A0, stars) + new String((char)0x25A1, 10 - stars)}";
+                    popup.TextAreaTMP.text = progress;
+                }
                 yield return new WaitForEndOfFrame();
             }
 
             if (www.isNetworkError || www.isHttpError) {
-                popup.TextAreaTMP.text = "Update wasn't successful\nTry again later,\nor update manually.";
-                button.SetActive(true);
+                _updateState = 3;
+                if (!managerMode) {
+                    popup.TextAreaTMP.text = "Update wasn't successful\nTry again later,\nor update manually.";
+                    button.SetActive(true);
+                }
                 _busy = false;
                 yield break;
             }
-            popup.TextAreaTMP.text = "Updating Host Fix\nPlease wait...\n\nDownload complete\ncopying file...";
+            if (!managerMode) {
+                popup.TextAreaTMP.text = "Updating Host Fix\nPlease wait...\n\nDownload complete\ncopying file...";
+            }
 
             var filePath = Path.Combine(Paths.PluginPath, asset.Name);
 
@@ -138,9 +176,14 @@ namespace HostFixPlugin {
             www.Dispose();
 
             if (!hasError) {
-                popup.TextAreaTMP.text = "Host Fix\nupdated successfully\nPlease restart the game.";
+                _updateState = 2;
+                if (!managerMode) {
+                    popup.TextAreaTMP.text = "Host Fix\nupdated successfully\nPlease restart the game.";
+                }
+            } else {
+                _updateState = 3;
             }
-            button.SetActive(true);
+            if (!managerMode) button.SetActive(true);
             _busy = false;
         }
 
@@ -258,7 +301,7 @@ namespace HostFixPlugin {
             if (Releases == null || Releases.Count == 0) return;
             var latestRelease = Releases.FirstOrDefault();
             if (latestRelease != null && latestRelease.IsNewer(HostFixPlugin.Version)) {
-                StartDownloadRelease(latestRelease);
+                StartDownloadRelease(latestRelease, managerMode: true);
             }
         }
 
