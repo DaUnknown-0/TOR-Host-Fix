@@ -70,8 +70,29 @@ public class HostFixPlugin : BasePlugin
         Logger = Log;
         Logger.LogInfo($"{PluginName} v{PluginVersion} loading...");
 
-        // Check if this mod is enabled. Early return wenn deaktiviert.
+        // Check if this mod is enabled.
         var enabled = Config.Bind("General", "Enabled", true, "Enable this mod");
+
+        // Im Mod-Manager registrieren — auch wenn deaktiviert, damit der Mod dort sichtbar bleibt
+        // und wieder aktiviert werden kann. RuntimeEnabled spiegelt den echten Ladezustand.
+        try {
+            var modData = new System.Collections.Generic.Dictionary<string, object> {
+                { "Guid", PluginGuid },
+                { "Name", PluginName },
+                { "Version", Version },
+                { "RepositoryOwner", "DaUnknown-0" },
+                { "RepositoryName", "TOR-Host-Fix" },
+                { "ButtonColor", Color.cyan },
+                { "Enabled", enabled },
+                { "RuntimeEnabled", enabled.Value }
+            };
+            AppDomain.CurrentDomain.SetData($"ModManager.RegisteredMod.{PluginGuid}", modData);
+            Logger.LogInfo($"Registered HostFixPlugin in Mod Manager registry (runtime={enabled.Value}).");
+        } catch (System.Exception ex) {
+            Logger.LogError($"Failed to register HostFixPlugin: {ex}");
+        }
+
+        // Early return wenn deaktiviert (Registrierung ist oben bereits erfolgt).
         if (!enabled.Value) {
             Logger.LogInfo($"{PluginName} is disabled in config — skipping load.");
             return;
@@ -115,24 +136,6 @@ public class HostFixPlugin : BasePlugin
 
         // Self-updater: checks GitHub releases and offers an in-game update button.
         AddComponent<HostFixUpdater>();
-
-        // Registriere diese Mod in der Mod-Manager-Registry via AppDomain (keine Compile-Zeit-Referenz).
-        try {
-            var modData = new System.Collections.Generic.Dictionary<string, object> {
-                { "Guid", PluginGuid },
-                { "Name", PluginName },
-                { "Version", Version },
-                { "RepositoryOwner", "DaUnknown-0" },
-                { "RepositoryName", "TOR-Host-Fix" },
-                { "ButtonColor", Color.cyan },
-                { "Enabled", enabled },
-                { "RuntimeEnabled", true }
-            };
-            AppDomain.CurrentDomain.SetData($"ModManager.RegisteredMod.{PluginGuid}", modData);
-            Logger.LogInfo($"Registered HostFixPlugin in Mod Manager registry.");
-        } catch (System.Exception ex) {
-            Logger.LogError($"Failed to register HostFixPlugin: {ex}");
-        }
 
         Logger.LogInfo($"{PluginName} v{PluginVersion} loaded — all patches applied.");
     }
