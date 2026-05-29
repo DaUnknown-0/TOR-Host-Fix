@@ -65,6 +65,10 @@ public class HostFixPlugin : BasePlugin
     internal static Assembly TORAssembly;
     internal static Assembly UsefulStuffAssembly;
 
+    // Laufzeit-Schalter für den Snitch-Host-Fallback (Fix 4), umschaltbar im Mod-Manager.
+    // Wird live in SnitchHostRoomFix gelesen — kein Neustart nötig.
+    internal static ConfigEntry<bool> SnitchFallbackEnabled;
+
     public override void Load()
     {
         Logger = Log;
@@ -72,6 +76,12 @@ public class HostFixPlugin : BasePlugin
 
         // Check if this mod is enabled.
         var enabled = Config.Bind("General", "Enabled", true, "Enable this mod");
+
+        // Snitch-Host-Fallback (Fix 4) separat umschaltbar. Greift sofort zur Laufzeit, daher kein
+        // Neustart nötig — der Mod-Manager rendert dafür einen Live-Toggle (ExtraToggle).
+        SnitchFallbackEnabled = Config.Bind("Snitch", "FallbackEnabled", true,
+            "Enable the host-only Snitch room re-broadcast fallback (Fix 4). Disable to leave the " +
+            "Snitch reveal entirely to UsefulTORStuff's client-side fix.");
 
         // Im Mod-Manager registrieren — auch wenn deaktiviert, damit der Mod dort sichtbar bleibt
         // und wieder aktiviert werden kann. RuntimeEnabled spiegelt den echten Ladezustand.
@@ -84,7 +94,10 @@ public class HostFixPlugin : BasePlugin
                 { "RepositoryName", "TOR-Host-Fix" },
                 { "ButtonColor", Color.cyan },
                 { "Enabled", enabled },
-                { "RuntimeEnabled", enabled.Value }
+                { "RuntimeEnabled", enabled.Value },
+                // Live-Toggle im Mod-Manager (wirkt sofort, kein Neustart).
+                { "ExtraToggle", SnitchFallbackEnabled },
+                { "ExtraToggleLabel", "Snitch Fallback" }
             };
             AppDomain.CurrentDomain.SetData($"ModManager.RegisteredMod.{PluginGuid}", modData);
             Logger.LogInfo($"Registered HostFixPlugin in Mod Manager registry (runtime={enabled.Value}).");
@@ -121,15 +134,15 @@ public class HostFixPlugin : BasePlugin
         harmony.PatchAll(typeof(HudManagerSafetyNet));
 
         // --- Fix 4: Snitch reveal misses an evil host (host re-broadcasts its room after TOR's reset) ---
+        // Echte Absicherung: der Fallback wird IMMER gepatcht und orientiert sich zur Laufzeit nur daran,
+        // ob der Client-Fix aktiv ist und ob der Host gerade ein Meeting startet — NICHT am Snitch.snitch-
+        // Handle. Konnte Snitch.snitch nicht aufgelöst werden (genau der Fehlerfall), darf der Fallback
+        // trotzdem greifen, statt komplett auszufallen.
+        harmony.PatchAll(typeof(SnitchHostRoomFix));
         if (SnitchSnitchField != null)
-        {
-            harmony.PatchAll(typeof(SnitchHostRoomFix));
-            Logger.LogInfo("Patched StartMeeting — Snitch host-room fix applied.");
-        }
+            Logger.LogInfo("Patched StartMeeting — Snitch host-room fallback armed (gated on a Snitch in play).");
         else
-        {
-            Logger.LogWarning("Snitch host-room fix skipped (Snitch.snitch unresolved).");
-        }
+            Logger.LogWarning("Patched StartMeeting — Snitch host-room fallback armed WITHOUT Snitch.snitch gate (handle unresolved).");
 
         // Version display in the top-corner PingTracker (host only).
         harmony.PatchAll(typeof(VersionDisplayPatch));
@@ -475,10 +488,25 @@ public class HostFixPlugin : BasePlugin
         [HarmonyPostfix]
         public static void Postfix()
         {
+            // Vom Nutzer im Mod-Manager abgeschaltet? Dann gar nicht erst einplanen.
+            if (SnitchFallbackEnabled != null && !SnitchFallbackEnabled.Value) return;
+
             // The host always initiates the meeting, so only its room loses the race — schedule the
-            // delayed re-send on the host only, and only when a Snitch is actually in play.
+            // delayed re-send on the host only.
             if (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost) return;
-            if (SnitchSnitchField == null || SnitchSnitchField.GetValue(null) == null) return;
+
+            // Soft-Optimierung, KEINE harte Sperre: nur überspringen, wenn wir sicher WISSEN, dass kein
+            // Snitch im Spiel ist (Handle aufgelöst UND Wert null). Konnte das Handle nicht aufgelöst
+            // werden, läuft der Fallback trotzdem — ein zusätzliches ShareRoom-RPC ohne Snitch ist harmlos
+            // (TOR's Handler schreibt nur in die ohnehin ungenutzte playerRoomMap).
+            if (SnitchSnitchField != null)
+            {
+                try
+                {
+                    if (SnitchSnitchField.GetValue(null) == null) return;
+                }
+                catch { /* Handle defekt — sicherheitshalber weitermachen */ }
+            }
 
             // If UsefulTORStuff's Transpiler-Fix is active on all clients, stand down — the client-side
             // fix is structurally cleaner and makes our host-only fallback redundant.
@@ -508,6 +536,8 @@ public class HostFixPlugin : BasePlugin
         {
             if (!_pending || Time.realtimeSinceStartup < _sendAt) return;
             _pending = false;
+            // Mid-pending im Mod-Manager abgeschaltet? Dann nicht mehr senden.
+            if (SnitchFallbackEnabled != null && !SnitchFallbackEnabled.Value) return;
             try
             {
                 var hud = HudManager.Instance;
