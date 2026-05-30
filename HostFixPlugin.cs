@@ -20,9 +20,9 @@
  * Note: all fixes run host-only. Fix 4 works host-only because the re-broadcast is
  * a normal ShareRoom RPC that TOR's own handler processes on the Snitch's client.
  *
- * Coordination with UsefulTORStuff: If UsefulTORStuff's Transpiler-Fix is active on
- * all clients (checked via UsefulTORStuffPlugin.SnitchClientFixActive), Fix 4 stands
- * down — the client-side structural fix is cleaner and makes the host fallback redundant.
+ * Coordination with UsefulTORStuff: If UsefulTORStuff's client-side Snitch fix is active
+ * on all clients (checked via UsefulTORStuffPlugin.SnitchClientFixActive), Fix 4 stands
+ * down — the client-side fix handles it on every client and makes the host fallback redundant.
  */
 
 global using Il2CppInterop.Runtime;
@@ -464,12 +464,12 @@ public class HostFixPlugin : BasePlugin
     // window. (Map mode uses live positions and is unaffected.) Gated only on a Snitch
     // being in play, read via reflection.
     //
-    // Coordination with UsefulTORStuff: If every client runs UsefulTORStuff with the
-    // Transpiler-Fix (checked via UsefulTORStuffPlugin.SnitchClientFixActive), this
-    // host-only fallback stands down — the Transpiler-Fix removes TOR's mid-meeting
-    // reset structurally (Lösung B), making the delayed re-broadcast redundant. When
-    // standing down, a log message confirms the client-side fix is active. If any
-    // client lacks the mod or the Transpiler-Fix isn't ready, the fallback runs as usual.
+    // Coordination with UsefulTORStuff: If every client runs UsefulTORStuff with its
+    // client-side Snitch fix ready (checked via UsefulTORStuffPlugin.SnitchClientFixActive),
+    // this host-only fallback stands down — the client-side fix reimplements the Snitch
+    // reveal on every client, making the delayed re-broadcast redundant. When standing
+    // down, a log message confirms the client-side fix is active. If any client lacks the
+    // mod or the client-side fix isn't ready, the fallback runs as usual.
     // ========================================================================
 
     [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.StartMeeting))]
@@ -508,8 +508,8 @@ public class HostFixPlugin : BasePlugin
                 catch { /* Handle defekt — sicherheitshalber weitermachen */ }
             }
 
-            // If UsefulTORStuff's Transpiler-Fix is active on all clients, stand down — the client-side
-            // fix is structurally cleaner and makes our host-only fallback redundant.
+            // If UsefulTORStuff's client-side Snitch fix is active on all clients, stand down — it
+            // reimplements the Snitch reveal on every client and makes our host-only fallback redundant.
             if (UsefulStuffSnitchClientFixActiveField != null)
             {
                 try
@@ -517,7 +517,7 @@ public class HostFixPlugin : BasePlugin
                     bool clientFixActive = Convert.ToBoolean(UsefulStuffSnitchClientFixActiveField.GetValue(null));
                     if (clientFixActive)
                     {
-                        Logger.LogInfo("[Fix4] UsefulTORStuff Transpiler-Fix active on all clients — standing down host re-broadcast.");
+                        Logger.LogInfo("[Fix4] UsefulTORStuff client-side Snitch fix active on all clients — standing down host re-broadcast.");
                         return;
                     }
                 }
