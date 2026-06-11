@@ -52,7 +52,7 @@ public class HostFixPlugin : BasePlugin
 {
     public const string PluginGuid = "com.trackerteam.hostfix";
     public const string PluginName = "TOR Host Fix";
-    public const string PluginVersion = "1.0.0";
+    public const string PluginVersion = "1.0.16";
     public static readonly System.Version Version = System.Version.Parse(PluginVersion);
 
     public static ManualLogSource Logger { get; private set; }
@@ -264,6 +264,10 @@ public class HostFixPlugin : BasePlugin
                 RoleDraftIsRunningField.SetValue(null, false);
                 if (was)
                     Logger.LogWarning("[Fix1] isRunning was stuck — reset to false.");
+
+                // P0.4: Per-Runden-Reset auch für den Snitch-Re-Broadcast, damit kein
+                // eingeplantes ShareRoom-RPC in die nächste Runde durchsickert.
+                SnitchHostRoomFix.Reset();
             }
             catch (Exception ex)
             {
@@ -363,6 +367,9 @@ public class HostFixPlugin : BasePlugin
                 {
                     _stuckTimer = 0f;
                     _loggedReset = false;
+                    // P0.4: Spiel läuft nicht (mehr) — ein noch eingeplantes Re-Broadcast verwerfen,
+                    // damit es nicht ins nächste Spiel überspringt.
+                    SnitchHostRoomFix.Reset();
                     return;
                 }
 
@@ -485,6 +492,16 @@ public class HostFixPlugin : BasePlugin
         private static bool _pending;
         private static float _sendAt;
 
+        // Verwirft ein eingeplantes Re-Broadcast (P0.4). Sonst überlebt ein _pending, das mangels
+        // GameState==Started nicht von Tick() konsumiert wurde (Spielende/Host-Leave innerhalb der
+        // 0.15s-Verzögerung), ins NÄCHSTE Spiel und feuert dort ein irrelevantes ShareRoom-RPC.
+        // Aufgerufen aus TORs Per-Runden-Reset (ResetVariablesPatch) und sobald die
+        // HudManagerSafetyNet GameState != Started sieht.
+        public static void Reset()
+        {
+            _pending = false;
+        }
+
         [HarmonyPostfix]
         public static void Postfix()
         {
@@ -600,11 +617,16 @@ public class HostFixPlugin : BasePlugin
             }
 
             // Clickable mod name, inserted just below the "TheOtherRoles vX" line.
-            string line = $"<link=\"hostFixCredits\"><color=#1FA8FF>Host Fix</color> v{PluginVersion}</link>";
-            int nl = text.IndexOf('\n');
-            text = nl >= 0
-                ? text.Substring(0, nl + 1) + line + "\n" + text.Substring(nl + 1)
-                : text + "\n" + line;
+            // P2.3: Marker-Guard gegen frame-weises Stapeln, falls TOR den Text künftig nicht mehr
+            // jeden Frame neu aufbaut (normalerweise ist die Zeile abwesend und wird eingefügt).
+            if (!text.Contains("hostFixCredits"))
+            {
+                string line = $"<link=\"hostFixCredits\"><color=#1FA8FF>Host Fix</color> v{PluginVersion}</link>";
+                int nl = text.IndexOf('\n');
+                text = nl >= 0
+                    ? text.Substring(0, nl + 1) + line + "\n" + text.Substring(nl + 1)
+                    : text + "\n" + line;
+            }
 
             // Insert the shared credit under TOR's "Design by Bavari" line — but only if no other
             // mod already added it this frame, so "Modded by DaUnknown" appears at most once.

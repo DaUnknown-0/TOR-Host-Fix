@@ -8,12 +8,21 @@ This mod is not affiliated with Among Us or Innersloth LLC, and the content cont
 
 1. **Host cooldown freeze** — resets `RoleDraft.isRunning` when it gets stuck at `true`, which otherwise freezes all kill cooldowns across rounds.
 2. **Host-only assignment crashes** — wraps the draft coroutine's host-only role/modifier/target assignment calls (Guesser gamemode, Lawyer target, modifiers) in a finalizer so a single exception can't kill the coroutine and leave the draft stuck.
-3. **Snitch reveal misses an evil host** — TOR resets the Snitch room map at the end of `StartMeeting`'s prefix, dropping the host's early `ShareRoom` (the host starts the meeting, so it sends first). A `StartMeeting` postfix re-broadcasts the room after the reset so an evil host appears in the Snitch's reveal like everyone else.
+3. **Snitch reveal misses an evil host** — TOR resets the Snitch room map at the end of `StartMeeting`'s prefix, dropping the host's early `ShareRoom` (the host starts the meeting, so it sends first). A `StartMeeting` postfix re-broadcasts the room after the reset so an evil host appears in the Snitch's reveal like everyone else. The scheduled re-broadcast is now cleared at every round reset (and whenever the game is no longer running), so a meeting that ends within the ~0.15 s delay can't leak a stray `ShareRoom` into the next game (fixed in 1.0.16).
 
 ## Features
 
 - **Auto-update**: checks this repo's GitHub releases on the main menu and offers an in-game update button.
 - **Version display**: shows `Host Fix vX.Y.Z` in the top-corner version readout — **for the host only** (this plugin only matters on the host's machine).
+
+## Compatibility
+
+| Host Fix | The Other Roles | Among Us |
+|---|---|---|
+| 1.0.16 | 4.8.0 | Steam build matching TOR 4.8.0 |
+
+This plugin only needs to run on the **host**. Clients are not expected to have it; it is
+intentionally excluded from the cross-mod lobby version overview.
 
 ## Requirements
 
