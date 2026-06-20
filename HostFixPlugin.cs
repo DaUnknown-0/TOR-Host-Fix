@@ -51,7 +51,7 @@ namespace HostFixPlugin;
 public class HostFixPlugin : BasePlugin
 {
     public const string PluginGuid = "com.trackerteam.hostfix";
-    public const string PluginName = "TOR Host Fix";
+    public const string PluginName = "TOR - Hostfix";
     public const string PluginVersion = "1.0.16";
     public static readonly System.Version Version = System.Version.Parse(PluginVersion);
 
@@ -621,7 +621,7 @@ public class HostFixPlugin : BasePlugin
             // jeden Frame neu aufbaut (normalerweise ist die Zeile abwesend und wird eingefügt).
             if (!text.Contains("hostFixCredits"))
             {
-                string line = $"<link=\"hostFixCredits\"><color=#1FA8FF>Host Fix</color> v{PluginVersion}</link>";
+                string line = $"<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{PluginVersion}</link>";
                 int nl = text.IndexOf('\n');
                 text = nl >= 0
                     ? text.Substring(0, nl + 1) + line + "\n" + text.Substring(nl + 1)

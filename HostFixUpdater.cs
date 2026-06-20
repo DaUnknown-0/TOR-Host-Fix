@@ -117,7 +117,7 @@ namespace HostFixPlugin {
                 Releases = JsonSerializer.Deserialize<List<GithubRelease>>(www.downloadHandler.text);
                 if (Releases != null) Releases.Sort(SortReleases);
             } catch (Exception ex) {
-                HostFixPlugin.Logger?.LogWarning($"Host Fix update check: failed to parse GitHub releases ({ex.Message}). Treating as 'no update'.");
+                HostFixPlugin.Logger?.LogWarning($"TOR - Hostfix update check: failed to parse GitHub releases ({ex.Message}). Treating as 'no update'.");
                 // Releases unverändert lassen (ggf. null) — überall als "kein Update" behandelt.
             } finally {
                 www.downloadHandler.Dispose();
@@ -146,7 +146,7 @@ namespace HostFixPlugin {
 
                 button = popup.transform.GetChild(2).gameObject;
                 button.SetActive(false);
-                popup.TextAreaTMP.text = "Updating Host Fix\nPlease wait...";
+                popup.TextAreaTMP.text = "Updating TOR - Hostfix\nPlease wait...";
             }
 
             var asset = release.Assets.Find(FilterPluginAsset);
@@ -160,7 +160,7 @@ namespace HostFixPlugin {
                 _updateProgress = www.downloadProgress;
                 if (!managerMode) {
                     int stars = Mathf.CeilToInt(www.downloadProgress * 10);
-                    string progress = $"Updating Host Fix\nPlease wait...\nDownloading...\n{new String((char)0x25A0, stars) + new String((char)0x25A1, 10 - stars)}";
+                    string progress = $"Updating TOR - Hostfix\nPlease wait...\nDownloading...\n{new String((char)0x25A0, stars) + new String((char)0x25A1, 10 - stars)}";
                     popup.TextAreaTMP.text = progress;
                 }
                 yield return new WaitForEndOfFrame();
@@ -176,7 +176,7 @@ namespace HostFixPlugin {
                 yield break;
             }
             if (!managerMode) {
-                popup.TextAreaTMP.text = "Updating Host Fix\nPlease wait...\n\nDownload complete\ncopying file...";
+                popup.TextAreaTMP.text = "Updating TOR - Hostfix\nPlease wait...\n\nDownload complete\ncopying file...";
             }
 
             var filePath = Path.Combine(Paths.PluginPath, asset.Name);
@@ -201,7 +201,7 @@ namespace HostFixPlugin {
             if (!hasError) {
                 _updateState = 2;
                 if (!managerMode) {
-                    popup.TextAreaTMP.text = "Host Fix\nupdated successfully\nPlease restart the game.";
+                    popup.TextAreaTMP.text = "TOR - Hostfix\nupdated successfully\nPlease restart the game.";
                 }
             } else {
                 _updateState = 3;
@@ -249,23 +249,23 @@ namespace HostFixPlugin {
             }));
 
             var text = button.transform.GetComponentInChildren<TMPro.TMP_Text>();
-            string t = "Update Host Fix";
+            string t = "Update TOR - Hostfix";
             StartCoroutine(Effects.Lerp(0.1f, (Action<float>)(p => text.SetText(t))));
             passiveButton.OnMouseOut.AddListener((Action)(() => text.color = Color.cyan));
             passiveButton.OnMouseOver.AddListener((Action)(() => text.color = Color.white));
             text.color = Color.cyan;
 
             if (_showPopUp) {
-                var announcement = $"<size=150%>A new TOR HOST FIX update to {latestRelease.Tag} is available</size>\n{latestRelease.Description}";
+                var announcement = $"<size=150%>A new TOR - HOSTFIX update to {latestRelease.Tag} is available</size>\n{latestRelease.Description}";
                 var mgr = FindObjectOfType<MainMenuManager>(true);
                 if (mgr != null)
-                    mgr.StartCoroutine(CoShowAnnouncement(announcement, shortTitle: "Host Fix Update", date: latestRelease.PublishedAt));
+                    mgr.StartCoroutine(CoShowAnnouncement(announcement, shortTitle: "TOR - Hostfix Update", date: latestRelease.PublishedAt));
             }
             _showPopUp = false;
         }
 
         [HideFromIl2Cpp]
-        public IEnumerator CoShowAnnouncement(string announcement, bool show = true, string shortTitle = "Host Fix Update", string title = "", string date = "") {
+        public IEnumerator CoShowAnnouncement(string announcement, bool show = true, string shortTitle = "TOR - Hostfix Update", string title = "", string date = "") {
             // Stagger behind other mods so Chance Modifier's popup appears first.
             yield return new WaitForSeconds(1.5f);
             // Wait until no announcement popup is currently visible (up to 30 s).
@@ -290,7 +290,7 @@ namespace HostFixPlugin {
                 Id = "hostFixAnnouncement",
                 Language = 0,
                 Number = 6971,
-                Title = title == "" ? "TOR Host Fix Announcement" : title,
+                Title = title == "" ? "TOR - Hostfix Announcement" : title,
                 ShortTitle = shortTitle,
                 SubTitle = "",
                 PinState = false,

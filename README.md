@@ -1,56 +1,25 @@
-# TOR Host Fix
+# TOR - Hostfix
 
 An external fix plugin for [The Other Roles](https://github.com/TheOtherRolesAU/TheOtherRoles) (TOR) 4.8.0 that patches several host-side bugs **without modifying TOR's source**. It resolves TOR types via reflection, so it stays a no-op if TOR's internals change rather than crashing.
 
 This mod is not affiliated with Among Us or Innersloth LLC, and the content contained therein is not endorsed or otherwise sponsored by Innersloth LLC. Portions of the materials contained herein are property of Innersloth LLC. © Innersloth LLC.
 
-## Fixes
+## Features
 
 1. **Host cooldown freeze** — resets `RoleDraft.isRunning` when it gets stuck at `true`, which otherwise freezes all kill cooldowns across rounds.
 2. **Host-only assignment crashes** — wraps the draft coroutine's host-only role/modifier/target assignment calls (Guesser gamemode, Lawyer target, modifiers) in a finalizer so a single exception can't kill the coroutine and leave the draft stuck.
-3. **Snitch reveal misses an evil host** — TOR resets the Snitch room map at the end of `StartMeeting`'s prefix, dropping the host's early `ShareRoom` (the host starts the meeting, so it sends first). A `StartMeeting` postfix re-broadcasts the room after the reset so an evil host appears in the Snitch's reveal like everyone else. The scheduled re-broadcast is now cleared at every round reset (and whenever the game is no longer running), so a meeting that ends within the ~0.15 s delay can't leak a stray `ShareRoom` into the next game (fixed in 1.0.16).
+3. **Snitch reveal misses an evil host** — TOR resets the Snitch room map at the end of `StartMeeting`'s prefix, dropping the host's early `ShareRoom` (the host starts the meeting, so it sends first). A `StartMeeting` postfix re-broadcasts the room after the reset so an evil host appears in the Snitch's reveal like everyone else. The scheduled re-broadcast is cleared at every round reset (and whenever the game is no longer running), so a meeting that ends within the ~0.15 s delay can't leak a stray `ShareRoom` into the next game (fixed in 1.0.16).
+- **Auto-update** — checks this repo's GitHub releases on the main menu and offers an in-game update button.
+- **Version display** — shows `Hostfix vX.Y.Z` in the top-corner version readout, **for the host only** (this plugin only matters on the host's machine).
 
-## Features
-
-- **Auto-update**: checks this repo's GitHub releases on the main menu and offers an in-game update button.
-- **Version display**: shows `Host Fix vX.Y.Z` in the top-corner version readout — **for the host only** (this plugin only matters on the host's machine).
-
-## Compatibility
-
-| Host Fix | The Other Roles | Among Us |
-|---|---|---|
-| 1.0.16 | 4.8.0 | Steam build matching TOR 4.8.0 |
-
-This plugin only needs to run on the **host**. Clients are not expected to have it; it is
-intentionally excluded from the cross-mod lobby version overview.
-
-## Requirements
-
-- [The Other Roles](https://github.com/TheOtherRolesAU/TheOtherRoles) 4.8.0 (hard dependency)
-- BepInEx IL2CPP 6.0.0-be.697
-- Among Us (Steam build matching your TOR version)
-
-## Building
-
-Unlike most TOR add-ons, this plugin does **not** reference `TheOtherRoles.dll` at compile time — it uses reflection. So a plain build is enough:
-
-```
-dotnet build -c Release
-```
-
-The output `HostFixPlugin.dll` lands in `bin/Release/net6.0/`.
-
-To auto-copy to your Among Us install, set the `AmongUsLatest` environment variable to your Among Us folder (the one containing `Among Us.exe` and `BepInEx/`).
-
-## Releasing
-
-Push a tag like `v1.0.0`. The GitHub Actions workflow stamps the version into the source, builds, and publishes a release with `HostFixPlugin.dll` attached. The auto-updater picks it up from there.
-
-## Installation
+## Download & Install
 
 1. Install The Other Roles into your Among Us BepInEx setup.
-2. Copy `HostFixPlugin.dll` into `<Among Us>/BepInEx/plugins/`.
-3. Start the game.
+2. Download the latest `HostFixPlugin.dll` from the [Releases page](https://github.com/DaUnknown-0/TOR-Host-Fix/releases/latest).
+3. Copy `HostFixPlugin.dll` into `<Among Us>/BepInEx/plugins/`.
+4. Start the game.
+
+After the first install, the in-game auto-updater checks this repo's GitHub releases on the main menu and offers an update button — manual downloads are only needed for the initial setup.
 
 ## License
 

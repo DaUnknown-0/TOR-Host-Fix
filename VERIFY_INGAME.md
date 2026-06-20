@@ -1,4 +1,4 @@
-# In-game verification checklist — TOR Host Fix 1.0.16
+# In-game verification checklist — TOR - Hostfix 1.0.16
 
 ## P0.4 — Stale Snitch re-broadcast across games (host)
 - [ ] As host with a Snitch in play, start a meeting and **end the game within ~0.15 s** of the
@@ -11,4 +11,4 @@
 
 ## Regression sweep
 - [ ] Fix 1 (`isRunning` stuck → reset) and Fix 2 (role-assignment finalizer) still behave.
-- [ ] Host-only "Host Fix vX" line still shows once in the version block.
+- [ ] Host-only "Hostfix vX" line still shows once in the version block.

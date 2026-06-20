@@ -1,4 +1,4 @@
-# Changelog — TOR Host Fix
+# Changelog — TOR - Hostfix
 
 ## 1.0.16
 
