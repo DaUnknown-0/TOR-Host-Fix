@@ -86,6 +86,11 @@ namespace HostFixPlugin {
         [HideFromIl2Cpp]
         public bool GetCheckCompleted() => _checkCompleted;
 
+        // True when the release list was successfully fetched (Mod Manager shows "check unavailable"
+        // instead of a misleading "up to date" when the GitHub call failed/rate-limited).
+        [HideFromIl2Cpp]
+        public bool ReleasesLoaded() => Releases != null && Releases.Count > 0;
+
         [HideFromIl2Cpp]
         private IEnumerator CoCheckForUpdate() {
             _busy = true;
@@ -316,7 +321,7 @@ namespace HostFixPlugin {
         // System.Version, which wrongly orders 1.0.0.4 > 1.0.0). >0 means a is newer than b.
         [HideFromIl2Cpp]
         public static int SemCompare(Version a, Version b) {
-            int c = new Version(a.Major, a.Minor, a.Build).CompareTo(new Version(b.Major, b.Minor, b.Build));
+            int c = new Version(a.Major, System.Math.Max(0, a.Minor), System.Math.Max(0, a.Build)).CompareTo(new Version(b.Major, System.Math.Max(0, b.Minor), System.Math.Max(0, b.Build)));
             if (c != 0) return c;
             bool aPre = a.Revision > 0, bPre = b.Revision > 0;
             if (aPre && bPre) return a.Revision.CompareTo(b.Revision);
