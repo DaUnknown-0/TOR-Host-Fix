@@ -342,6 +342,32 @@ namespace HostFixPlugin {
             }
         }
 
+        // ---- Test/Stable channel switching (Mod Manager "show test versions" toggle) ----
+        // Channel from the TAG FORMAT: stable = vX.Y.Z (Version.Revision <= 0), test = vX.Y.Z.W (>0).
+        [HideFromIl2Cpp]
+        public GithubRelease LatestInChannel(bool stable) {
+            if (Releases == null) return null;
+            foreach (var r in Releases) {
+                if (r == null || r.Draft) continue;
+                int rev;
+                try { rev = r.Version.Revision; } catch { continue; }
+                bool isTest = rev > 0;
+                if (stable == isTest) continue;
+                if (r.Assets != null && r.Assets.Any(FilterPluginAsset)) return r;
+            }
+            return null;
+        }
+
+        [HideFromIl2Cpp]
+        public bool HasChannelRelease(bool stable) => LatestInChannel(stable) != null;
+
+        // Force-install the latest release of the given channel (deliberate channel switch, allows downgrade).
+        [HideFromIl2Cpp]
+        public void TriggerChannelSwitch(bool stable) {
+            var r = LatestInChannel(stable);
+            if (r != null) StartDownloadRelease(r, managerMode: true);
+        }
+
         // Prüft via AppDomain ob Mod-Manager aktiviert ist (keine Compile-Zeit-Referenz).
         private static bool IsModManagerEnabled() {
             try {
