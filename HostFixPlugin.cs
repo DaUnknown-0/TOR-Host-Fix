@@ -621,7 +621,7 @@ public class HostFixPlugin : BasePlugin
             // jeden Frame neu aufbaut (normalerweise ist die Zeile abwesend und wird eingefügt).
             if (!text.Contains("hostFixCredits"))
             {
-                string line = $"<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{PluginVersion}</link>";
+                string line = $"<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{VersionDisplay.Format(Version)}</link>";
                 int nl = text.IndexOf('\n');
                 text = nl >= 0
                     ? text.Substring(0, nl + 1) + line + "\n" + text.Substring(nl + 1)
