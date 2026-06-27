@@ -230,8 +230,8 @@ namespace HostFixPlugin {
                 return;
             }
 
-            var latestRelease = Releases.FirstOrDefault();
-            if (latestRelease == null || !latestRelease.IsNewer(global::HostFixPlugin.HostFixPlugin.Version) || !latestRelease.Assets.Any(FilterPluginAsset))
+            var latestRelease = UpdateTarget();
+            if (latestRelease == null || SemCompare(latestRelease.Version, HostFixPlugin.Version) <= 0 || !latestRelease.Assets.Any(FilterPluginAsset))
                 return;
 
             var template = GameObject.Find("ExitGameButton");
@@ -311,38 +311,19 @@ namespace HostFixPlugin {
             })));
         }
 
-        // Callback-Methoden für ModManagerRegistry: Prüft ob ein Update verfügbar ist.
+        // ---- Channel awareness + semantic version comparison ----
+        // Semantic comparison where a STABLE vX.Y.Z SUPERSEDES its prereleases vX.Y.Z.W (unlike
+        // System.Version, which wrongly orders 1.0.0.4 > 1.0.0). >0 means a is newer than b.
         [HideFromIl2Cpp]
-        public bool HasUpdate() {
-            if (Releases == null || Releases.Count == 0) return false;
-            var latestRelease = Releases.FirstOrDefault();
-            return latestRelease != null
-                && latestRelease.IsNewer(HostFixPlugin.Version)
-                && latestRelease.Assets.Any(FilterPluginAsset);
+        public static int SemCompare(Version a, Version b) {
+            int c = new Version(a.Major, a.Minor, a.Build).CompareTo(new Version(b.Major, b.Minor, b.Build));
+            if (c != 0) return c;
+            bool aPre = a.Revision > 0, bPre = b.Revision > 0;
+            if (aPre && bPre) return a.Revision.CompareTo(b.Revision);
+            if (aPre == bPre) return 0;
+            return aPre ? -1 : 1; // prerelease older than the finalized stable of the same base
         }
 
-        // F2: Roh-Release-Notes (GitHub-`body`) der neuesten Version. Aus dem bereits geladenen
-        // JSON — kein zusätzlicher API-Call. Strip/Truncate übernimmt das Mod-Manager-UI.
-        [HideFromIl2Cpp]
-        public string GetReleaseNotes() {
-            if (Releases == null || Releases.Count == 0) return "";
-            return Releases.FirstOrDefault()?.Description ?? "";
-        }
-
-        // Callback-Methode für ModManagerRegistry: Startet den Update-Download.
-        [HideFromIl2Cpp]
-        public void TriggerUpdateFromManager() {
-            if (Releases == null || Releases.Count == 0) return;
-            var latestRelease = Releases.FirstOrDefault();
-            // Asset-Check wie in HasUpdate(): ohne passende DLL liefe CoDownloadRelease in
-            // einen NullRef bei asset.DownloadUrl (release.Assets.Find liefert dann null).
-            if (latestRelease != null && latestRelease.IsNewer(HostFixPlugin.Version)
-                && latestRelease.Assets.Any(FilterPluginAsset)) {
-                StartDownloadRelease(latestRelease, managerMode: true);
-            }
-        }
-
-        // ---- Test/Stable channel switching (Mod Manager "show test versions" toggle) ----
         // Channel from the TAG FORMAT: stable = vX.Y.Z (Version.Revision <= 0), test = vX.Y.Z.W (>0).
         [HideFromIl2Cpp]
         public GithubRelease LatestInChannel(bool stable) {
@@ -361,11 +342,47 @@ namespace HostFixPlugin {
         [HideFromIl2Cpp]
         public bool HasChannelRelease(bool stable) => LatestInChannel(stable) != null;
 
-        // Force-install the latest release of the given channel (deliberate channel switch, allows downgrade).
+        // The update target follows the shared "show test versions" toggle. OFF -> newest STABLE only.
+        // ON -> the newest prerelease ONLY if semantically AHEAD of the newest stable; an old prerelease
+        // (base <= newest stable) is ignored -> use the stable.
+        [HideFromIl2Cpp]
+        public GithubRelease UpdateTarget() {
+            if (Releases == null) return null;
+            var stable = LatestInChannel(true);
+            if (!VersionDisplay.ShowTestVersions()) return stable;
+            var pre = LatestInChannel(false);
+            if (pre != null && (stable == null || SemCompare(pre.Version, stable.Version) > 0)) return pre;
+            return stable;
+        }
+
+        // Callback-Methoden für ModManagerRegistry: Prüft ob ein Update verfügbar ist.
+        [HideFromIl2Cpp]
+        public bool HasUpdate() {
+            var t = UpdateTarget();
+            return t != null && t.Assets.Any(FilterPluginAsset)
+                && SemCompare(t.Version, HostFixPlugin.Version) > 0;
+        }
+
+        // Roh-Release-Notes (GitHub-`body`) der Ziel-Version (aus dem bereits geladenen JSON).
+        [HideFromIl2Cpp]
+        public string GetReleaseNotes() => UpdateTarget()?.Description ?? "";
+
+        // Callback-Methode für ModManagerRegistry: Startet den Update-Download.
+        [HideFromIl2Cpp]
+        public void TriggerUpdateFromManager() {
+            var t = UpdateTarget();
+            if (t != null && t.Assets.Any(FilterPluginAsset)
+                && SemCompare(t.Version, HostFixPlugin.Version) > 0)
+                StartDownloadRelease(t, managerMode: true);
+        }
+
+        // Force-install the latest release of the given channel (up- OR downgrade). Only downloads if it
+        // is REALLY a different version than the running build.
         [HideFromIl2Cpp]
         public void TriggerChannelSwitch(bool stable) {
             var r = LatestInChannel(stable);
-            if (r != null) StartDownloadRelease(r, managerMode: true);
+            if (r != null && SemCompare(r.Version, HostFixPlugin.Version) != 0)
+                StartDownloadRelease(r, managerMode: true);
         }
 
         // Prüft via AppDomain ob Mod-Manager aktiviert ist (keine Compile-Zeit-Referenz).

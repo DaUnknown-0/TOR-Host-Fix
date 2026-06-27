@@ -14,8 +14,8 @@ namespace HostFixPlugin {
         public const string ShowTestVersionsKey = "TORMods.ShowTestVersions";
 
         public static bool ShowTestVersions() {
-            try { return !(AppDomain.CurrentDomain.GetData(ShowTestVersionsKey) is bool b) || b; }
-            catch { return true; }
+            try { return AppDomain.CurrentDomain.GetData(ShowTestVersionsKey) is bool b && b; }
+            catch { return false; }
         }
 
         public static void SetShowTestVersions(bool value) {
