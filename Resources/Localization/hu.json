@@ -1,0 +1,17 @@
+{
+ "hostfix.config.pluginname": "TOR - Hostfix",
+ "hostfix.config.enabled_desc": "Ezen mod engedélyezése",
+ "hostfix.config.snitchfallback_desc": "A csak házigazda oldalán működő Snitch szoba-újraközvetítési tartalék engedélyezése (4. javítás). Tiltsd le, ha a Snitch leleplezését teljesen az UsefulTORStuff kliensoldali javítására bíznád.",
+ "hostfix.modmanager.snitchfallback_label": "Snitch Fallback",
+ "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
+ "hostfix.hud.modded_by_credit": "\n<size=70%>Készítette: <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.updater.popup_updating": "TOR - Hostfix frissítése\nKérlek várj...",
+ "hostfix.updater.popup_downloading_progress": "TOR - Hostfix frissítése\nKérlek várj...\nLetöltés...\n{0}",
+ "hostfix.updater.popup_failed": "A frissítés sikertelen\nPróbáld újra később,\nvagy frissíts manuálisan.",
+ "hostfix.updater.popup_copying": "TOR - Hostfix frissítése\nKérlek várj...\n\nLetöltés kész\nfájl másolása...",
+ "hostfix.updater.popup_success": "TOR - Hostfix\nsikeresen frissítve\nKérlek indítsd újra a játékot.",
+ "hostfix.updater.button_label": "TOR - Hostfix frissítése",
+ "hostfix.updater.announcement_body": "<size=150%>Elérhető egy új TOR - HOSTFIX frissítés ({0})</size>\n{1}",
+ "hostfix.updater.announcement_title": "TOR - Hostfix közlemény",
+ "hostfix.updater.announcement_shorttitle": "TOR - Hostfix frissítés"
+}

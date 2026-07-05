@@ -1,0 +1,17 @@
+{
+ "hostfix.config.pluginname": "TOR - Hostfix",
+ "hostfix.config.enabled_desc": "Bu modu etkinleştir",
+ "hostfix.config.snitchfallback_desc": "Sadece host tarafındaki Snitch oda yeniden yayın yedeğini etkinleştir (Düzeltme 4). Snitch ifşasını tamamen UsefulTORStuff'ın istemci taraflı düzeltmesine bırakmak için devre dışı bırakın.",
+ "hostfix.modmanager.snitchfallback_label": "Snitch Yedeği",
+ "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
+ "hostfix.hud.modded_by_credit": "\n<size=70%>Mod yapan: <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.updater.popup_updating": "TOR - Hostfix güncelleniyor\nLütfen bekleyin...",
+ "hostfix.updater.popup_downloading_progress": "TOR - Hostfix güncelleniyor\nLütfen bekleyin...\nİndiriliyor...\n{0}",
+ "hostfix.updater.popup_failed": "Güncelleme başarısız oldu\nDaha sonra tekrar deneyin\nya da elle güncelleyin.",
+ "hostfix.updater.popup_copying": "TOR - Hostfix güncelleniyor\nLütfen bekleyin...\n\nİndirme tamamlandı\ndosya kopyalanıyor...",
+ "hostfix.updater.popup_success": "TOR - Hostfix\nbaşarıyla güncellendi\nLütfen oyunu yeniden başlatın.",
+ "hostfix.updater.button_label": "TOR - Hostfix'i Güncelle",
+ "hostfix.updater.announcement_body": "<size=150%>{0} sürümüne yeni bir TOR - HOSTFIX güncellemesi mevcut</size>\n{1}",
+ "hostfix.updater.announcement_title": "TOR - Hostfix Duyurusu",
+ "hostfix.updater.announcement_shorttitle": "TOR - Hostfix Güncellemesi"
+}

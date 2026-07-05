@@ -151,7 +151,7 @@ namespace HostFixPlugin {
 
                 button = popup.transform.GetChild(2).gameObject;
                 button.SetActive(false);
-                popup.TextAreaTMP.text = "Updating TOR - Hostfix\nPlease wait...";
+                popup.TextAreaTMP.text = HFLocalization.Tr("hostfix.updater.popup_updating");
             }
 
             var asset = release.Assets.Find(FilterPluginAsset);
@@ -165,7 +165,7 @@ namespace HostFixPlugin {
                 _updateProgress = www.downloadProgress;
                 if (!managerMode) {
                     int stars = Mathf.CeilToInt(www.downloadProgress * 10);
-                    string progress = $"Updating TOR - Hostfix\nPlease wait...\nDownloading...\n{new String((char)0x25A0, stars) + new String((char)0x25A1, 10 - stars)}";
+                    string progress = HFLocalization.Tr("hostfix.updater.popup_downloading_progress", new String((char)0x25A0, stars) + new String((char)0x25A1, 10 - stars));
                     popup.TextAreaTMP.text = progress;
                 }
                 yield return new WaitForEndOfFrame();
@@ -174,14 +174,14 @@ namespace HostFixPlugin {
             if (www.isNetworkError || www.isHttpError) {
                 _updateState = 3;
                 if (!managerMode) {
-                    popup.TextAreaTMP.text = "Update wasn't successful\nTry again later,\nor update manually.";
+                    popup.TextAreaTMP.text = HFLocalization.Tr("hostfix.updater.popup_failed");
                     button.SetActive(true);
                 }
                 _busy = false;
                 yield break;
             }
             if (!managerMode) {
-                popup.TextAreaTMP.text = "Updating TOR - Hostfix\nPlease wait...\n\nDownload complete\ncopying file...";
+                popup.TextAreaTMP.text = HFLocalization.Tr("hostfix.updater.popup_copying");
             }
 
             var filePath = Path.Combine(Paths.PluginPath, asset.Name);
@@ -206,7 +206,7 @@ namespace HostFixPlugin {
             if (!hasError) {
                 _updateState = 2;
                 if (!managerMode) {
-                    popup.TextAreaTMP.text = "TOR - Hostfix\nupdated successfully\nPlease restart the game.";
+                    popup.TextAreaTMP.text = HFLocalization.Tr("hostfix.updater.popup_success");
                 }
             } else {
                 _updateState = 3;
@@ -254,17 +254,17 @@ namespace HostFixPlugin {
             }));
 
             var text = button.transform.GetComponentInChildren<TMPro.TMP_Text>();
-            string t = "Update TOR - Hostfix";
+            string t = HFLocalization.Tr("hostfix.updater.button_label");
             StartCoroutine(Effects.Lerp(0.1f, (Action<float>)(p => text.SetText(t))));
             passiveButton.OnMouseOut.AddListener((Action)(() => text.color = Color.cyan));
             passiveButton.OnMouseOver.AddListener((Action)(() => text.color = Color.white));
             text.color = Color.cyan;
 
             if (_showPopUp) {
-                var announcement = $"<size=150%>A new TOR - HOSTFIX update to {latestRelease.Tag} is available</size>\n{latestRelease.Description}";
+                var announcement = HFLocalization.Tr("hostfix.updater.announcement_body", latestRelease.Tag, latestRelease.Description);
                 var mgr = FindObjectOfType<MainMenuManager>(true);
                 if (mgr != null)
-                    mgr.StartCoroutine(CoShowAnnouncement(announcement, shortTitle: "TOR - Hostfix Update", date: latestRelease.PublishedAt));
+                    mgr.StartCoroutine(CoShowAnnouncement(announcement, shortTitle: HFLocalization.Tr("hostfix.updater.announcement_shorttitle"), date: latestRelease.PublishedAt));
             }
             _showPopUp = false;
         }
@@ -295,7 +295,7 @@ namespace HostFixPlugin {
                 Id = "hostFixAnnouncement",
                 Language = 0,
                 Number = 6971,
-                Title = title == "" ? "TOR - Hostfix Announcement" : title,
+                Title = title == "" ? HFLocalization.Tr("hostfix.updater.announcement_title") : title,
                 ShortTitle = shortTitle,
                 SubTitle = "",
                 PinState = false,

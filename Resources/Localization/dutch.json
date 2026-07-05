@@ -1,0 +1,17 @@
+{
+ "hostfix.config.pluginname": "TOR - Hostfix",
+ "hostfix.config.enabled_desc": "Schakel deze mod in",
+ "hostfix.config.snitchfallback_desc": "Schakel de host-only Snitch-kamer heruitzending-fallback in (Fix 4). Schakel uit om de Snitch-onthulling volledig aan de client-side fix van UsefulTORStuff over te laten.",
+ "hostfix.modmanager.snitchfallback_label": "Snitch Fallback",
+ "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
+ "hostfix.hud.modded_by_credit": "\n<size=70%>Gemod door <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.updater.popup_updating": "TOR - Hostfix wordt bijgewerkt\nEven geduld...",
+ "hostfix.updater.popup_downloading_progress": "TOR - Hostfix wordt bijgewerkt\nEven geduld...\nDownloaden...\n{0}",
+ "hostfix.updater.popup_failed": "Update niet geslaagd\nProbeer het later opnieuw,\nof update handmatig.",
+ "hostfix.updater.popup_copying": "TOR - Hostfix wordt bijgewerkt\nEven geduld...\n\nDownload voltooid\nbestand kopiëren...",
+ "hostfix.updater.popup_success": "TOR - Hostfix\nsuccesvol bijgewerkt\nHerstart het spel.",
+ "hostfix.updater.button_label": "TOR - Hostfix bijwerken",
+ "hostfix.updater.announcement_body": "<size=150%>Een nieuwe TOR - HOSTFIX-update naar {0} is beschikbaar</size>\n{1}",
+ "hostfix.updater.announcement_title": "TOR - Hostfix Aankondiging",
+ "hostfix.updater.announcement_shorttitle": "TOR - Hostfix Update"
+}

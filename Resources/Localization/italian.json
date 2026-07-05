@@ -1,0 +1,17 @@
+{
+ "hostfix.config.pluginname": "TOR - Hostfix",
+ "hostfix.config.enabled_desc": "Attiva questa mod",
+ "hostfix.config.snitchfallback_desc": "Attiva il fallback di re-invio della stanza dello Snitch lato host (Fix 4). Disattivalo per lasciare la rivelazione dello Snitch interamente al fix lato client di UsefulTORStuff.",
+ "hostfix.modmanager.snitchfallback_label": "Fallback Snitch",
+ "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
+ "hostfix.hud.modded_by_credit": "\n<size=70%>Moddato da <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.updater.popup_updating": "Aggiornamento di TOR - Hostfix\nAttendere prego...",
+ "hostfix.updater.popup_downloading_progress": "Aggiornamento di TOR - Hostfix\nAttendere prego...\nDownload in corso...\n{0}",
+ "hostfix.updater.popup_failed": "L'aggiornamento non è riuscito\nRiprova più tardi,\noppure aggiorna manualmente.",
+ "hostfix.updater.popup_copying": "Aggiornamento di TOR - Hostfix\nAttendere prego...\n\nDownload completato\ncopia del file in corso...",
+ "hostfix.updater.popup_success": "TOR - Hostfix\naggiornato con successo\nRiavvia il gioco.",
+ "hostfix.updater.button_label": "Aggiorna TOR - Hostfix",
+ "hostfix.updater.announcement_body": "<size=150%>È disponibile un nuovo aggiornamento di TOR - HOSTFIX alla {0}</size>\n{1}",
+ "hostfix.updater.announcement_title": "Annuncio TOR - Hostfix",
+ "hostfix.updater.announcement_shorttitle": "Aggiornamento TOR - Hostfix"
+}

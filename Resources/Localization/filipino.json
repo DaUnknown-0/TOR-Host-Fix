@@ -1,0 +1,17 @@
+{
+ "hostfix.config.pluginname": "TOR - Hostfix",
+ "hostfix.config.enabled_desc": "I-enable ang mod na ito",
+ "hostfix.config.snitchfallback_desc": "I-enable ang host-only na Snitch room re-broadcast fallback (Fix 4). I-disable para ipaubaya nang lubos ang Snitch reveal sa client-side fix ng UsefulTORStuff.",
+ "hostfix.modmanager.snitchfallback_label": "Snitch Fallback",
+ "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
+ "hostfix.hud.modded_by_credit": "\n<size=70%>Ginawa ni <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.updater.popup_updating": "Ina-update ang TOR - Hostfix\nMaghintay lang...",
+ "hostfix.updater.popup_downloading_progress": "Ina-update ang TOR - Hostfix\nMaghintay lang...\nDina-download...\n{0}",
+ "hostfix.updater.popup_failed": "Hindi matagumpay ang update\nSubukan ulit mamaya,\no i-update nang manu-mano.",
+ "hostfix.updater.popup_copying": "Ina-update ang TOR - Hostfix\nMaghintay lang...\n\nTapos na ang download\nkinokopya ang file...",
+ "hostfix.updater.popup_success": "TOR - Hostfix\nmatagumpay na na-update\nPakisimulan muli ang laro.",
+ "hostfix.updater.button_label": "I-update ang TOR - Hostfix",
+ "hostfix.updater.announcement_body": "<size=150%>Available na ang bagong TOR - HOSTFIX update na {0}</size>\n{1}",
+ "hostfix.updater.announcement_title": "TOR - Hostfix Announcement",
+ "hostfix.updater.announcement_shorttitle": "TOR - Hostfix Update"
+}

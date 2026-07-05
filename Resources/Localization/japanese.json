@@ -1,0 +1,17 @@
+{
+ "hostfix.config.pluginname": "TOR - Hostfix",
+ "hostfix.config.enabled_desc": "このModを有効にする",
+ "hostfix.config.snitchfallback_desc": "ホスト限定のSnitchルーム再送信フォールバック(修正4)を有効にします。無効にすると、Snitchの正体表示はUsefulTORStuffのクライアント側修正に完全に委ねられます。",
+ "hostfix.modmanager.snitchfallback_label": "Snitchフォールバック",
+ "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
+ "hostfix.hud.modded_by_credit": "\n<size=70%>Mod制作: <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.updater.popup_updating": "TOR - Hostfix を更新中\nお待ちください...",
+ "hostfix.updater.popup_downloading_progress": "TOR - Hostfix を更新中\nお待ちください...\nダウンロード中...\n{0}",
+ "hostfix.updater.popup_failed": "更新に失敗しました\n後でもう一度試すか、\n手動で更新してください。",
+ "hostfix.updater.popup_copying": "TOR - Hostfix を更新中\nお待ちください...\n\nダウンロード完了\nファイルをコピー中...",
+ "hostfix.updater.popup_success": "TOR - Hostfix の\n更新が完了しました\nゲームを再起動してください。",
+ "hostfix.updater.button_label": "TOR - Hostfix を更新",
+ "hostfix.updater.announcement_body": "<size=150%>TOR - HOSTFIX の新しいアップデート {0} が利用可能です</size>\n{1}",
+ "hostfix.updater.announcement_title": "TOR - Hostfix お知らせ",
+ "hostfix.updater.announcement_shorttitle": "TOR - Hostfix アップデート"
+}

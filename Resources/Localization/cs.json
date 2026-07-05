@@ -1,0 +1,17 @@
+{
+ "hostfix.config.pluginname": "TOR - Hostfix",
+ "hostfix.config.enabled_desc": "Povolit tento mod",
+ "hostfix.config.snitchfallback_desc": "Povolit záložní opětovné vysílání místnosti Snitche fungující jen na straně hostitele (Oprava 4). Vypni, aby odhalení Snitche zůstalo zcela na klientské opravě UsefulTORStuff.",
+ "hostfix.modmanager.snitchfallback_label": "Snitch Fallback",
+ "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
+ "hostfix.hud.modded_by_credit": "\n<size=70%>Vytvořil <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.updater.popup_updating": "Aktualizace TOR - Hostfix\nČekej prosím...",
+ "hostfix.updater.popup_downloading_progress": "Aktualizace TOR - Hostfix\nČekej prosím...\nStahování...\n{0}",
+ "hostfix.updater.popup_failed": "Aktualizace se nezdařila\nZkus to znovu později,\nnebo aktualizuj ručně.",
+ "hostfix.updater.popup_copying": "Aktualizace TOR - Hostfix\nČekej prosím...\n\nStahování dokončeno\nkopírování souboru...",
+ "hostfix.updater.popup_success": "TOR - Hostfix\núspěšně aktualizováno\nProsím restartuj hru.",
+ "hostfix.updater.button_label": "Aktualizovat TOR - Hostfix",
+ "hostfix.updater.announcement_body": "<size=150%>Je k dispozici nová aktualizace TOR - HOSTFIX na verzi {0}</size>\n{1}",
+ "hostfix.updater.announcement_title": "Oznámení TOR - Hostfix",
+ "hostfix.updater.announcement_shorttitle": "Aktualizace TOR - Hostfix"
+}

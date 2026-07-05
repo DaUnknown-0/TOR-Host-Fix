@@ -1,0 +1,17 @@
+{
+ "hostfix.config.pluginname": "TOR - Hostfix",
+ "hostfix.config.enabled_desc": "Включить этот мод",
+ "hostfix.config.snitchfallback_desc": "Включить резервную ретрансляцию комнаты Snitch, работающую только на хосте (Fix 4). Отключите, чтобы полностью оставить раскрытие Snitch на стороне клиента - на усмотрение исправления UsefulTORStuff.",
+ "hostfix.modmanager.snitchfallback_label": "Резерв Snitch",
+ "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
+ "hostfix.hud.modded_by_credit": "\n<size=70%>Модификация: <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.updater.popup_updating": "Обновление TOR - Hostfix\nПожалуйста, подождите...",
+ "hostfix.updater.popup_downloading_progress": "Обновление TOR - Hostfix\nПожалуйста, подождите...\nЗагрузка...\n{0}",
+ "hostfix.updater.popup_failed": "Обновление не удалось\nПопробуйте позже,\nили обновите вручную.",
+ "hostfix.updater.popup_copying": "Обновление TOR - Hostfix\nПожалуйста, подождите...\n\nЗагрузка завершена\nкопирование файла...",
+ "hostfix.updater.popup_success": "TOR - Hostfix\nуспешно обновлён\nПерезапустите игру.",
+ "hostfix.updater.button_label": "Обновить TOR - Hostfix",
+ "hostfix.updater.announcement_body": "<size=150%>Доступно новое обновление TOR - HOSTFIX до версии {0}</size>\n{1}",
+ "hostfix.updater.announcement_title": "Объявление TOR - Hostfix",
+ "hostfix.updater.announcement_shorttitle": "Обновление TOR - Hostfix"
+}

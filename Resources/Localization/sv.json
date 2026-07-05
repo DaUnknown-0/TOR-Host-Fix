@@ -1,0 +1,17 @@
+{
+ "hostfix.config.pluginname": "TOR - Hostfix",
+ "hostfix.config.enabled_desc": "Aktivera denna mod",
+ "hostfix.config.snitchfallback_desc": "Aktivera den värdbaserade Snitch-rum-återutsändningen (Fix 4). Inaktivera för att helt lämna Snitch-avslöjandet till UsefulTORStuffs klientsidesfix.",
+ "hostfix.modmanager.snitchfallback_label": "Snitch-fallback",
+ "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
+ "hostfix.hud.modded_by_credit": "\n<size=70%>Moddad av <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.updater.popup_updating": "Uppdaterar TOR - Hostfix\nVänta...",
+ "hostfix.updater.popup_downloading_progress": "Uppdaterar TOR - Hostfix\nVänta...\nLaddar ner...\n{0}",
+ "hostfix.updater.popup_failed": "Uppdateringen misslyckades\nFörsök igen senare,\neller uppdatera manuellt.",
+ "hostfix.updater.popup_copying": "Uppdaterar TOR - Hostfix\nVänta...\n\nNedladdning klar\nkopierar fil...",
+ "hostfix.updater.popup_success": "TOR - Hostfix\nuppdaterades\nStarta om spelet.",
+ "hostfix.updater.button_label": "Uppdatera TOR - Hostfix",
+ "hostfix.updater.announcement_body": "<size=150%>En ny TOR - HOSTFIX-uppdatering till {0} finns tillgänglig</size>\n{1}",
+ "hostfix.updater.announcement_title": "TOR - Hostfix-tillkännagivande",
+ "hostfix.updater.announcement_shorttitle": "TOR - Hostfix-uppdatering"
+}

@@ -52,7 +52,7 @@ public class HostFixPlugin : BasePlugin
 {
     public const string PluginGuid = "com.trackerteam.hostfix";
     public const string PluginName = "TOR - Hostfix";
-    public const string PluginVersion = "1.0.16";
+    public const string PluginVersion = "1.0.23.1";
     public static readonly System.Version Version = System.Version.Parse(PluginVersion);
 
     public static ManualLogSource Logger { get; private set; }
@@ -83,6 +83,10 @@ public class HostFixPlugin : BasePlugin
             "Enable the host-only Snitch room re-broadcast fallback (Fix 4). Disable to leave the " +
             "Snitch reveal entirely to UsefulTORStuff's client-side fix.");
 
+        // Lokalisierung: lädt die hostfix.*-Tabellen und folgt der von UsefulTORStuff via
+        // AppDomain publizierten Sprache (HFLocalization; Poll-Patches unten via PatchAll).
+        HFLocalization.Initialize();
+
         // Im Mod-Manager registrieren — auch wenn deaktiviert, damit der Mod dort sichtbar bleibt
         // und wieder aktiviert werden kann. RuntimeEnabled spiegelt den echten Ladezustand.
         try {
@@ -97,9 +101,15 @@ public class HostFixPlugin : BasePlugin
                 { "RuntimeEnabled", enabled.Value },
                 // Live-Toggle im Mod-Manager (wirkt sofort, kein Neustart).
                 { "ExtraToggle", SnitchFallbackEnabled },
-                { "ExtraToggleLabel", "Snitch Fallback" }
+                { "ExtraToggleLabel", HFLocalization.Tr("hostfix.modmanager.snitchfallback_label") }
             };
             AppDomain.CurrentDomain.SetData($"ModManager.RegisteredMod.{PluginGuid}", modData);
+            // Sprachwechsel: das im Mod-Manager angezeigte Label in der registrierten Map live
+            // nachziehen (die Dictionary-Referenz ist prozessweit geteilt).
+            HFLocalization.LanguageApplied += () => {
+                try { modData["ExtraToggleLabel"] = HFLocalization.Tr("hostfix.modmanager.snitchfallback_label"); }
+                catch { }
+            };
             Logger.LogInfo($"Registered HostFixPlugin in Mod Manager registry (runtime={enabled.Value}).");
         } catch (System.Exception ex) {
             Logger.LogError($"Failed to register HostFixPlugin: {ex}");
@@ -146,6 +156,9 @@ public class HostFixPlugin : BasePlugin
 
         // Version display in the top-corner PingTracker (host only).
         harmony.PatchAll(typeof(VersionDisplayPatch));
+
+        // Localization change detection (HudManager.Update poll + MainMenuManager.Start).
+        harmony.PatchAll(typeof(HFLocalization));
 
         // Self-updater: checks GitHub releases and offers an in-game update button.
         AddComponent<HostFixUpdater>();
@@ -621,7 +634,7 @@ public class HostFixPlugin : BasePlugin
             // jeden Frame neu aufbaut (normalerweise ist die Zeile abwesend und wird eingefügt).
             if (!text.Contains("hostFixCredits"))
             {
-                string line = $"<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{VersionDisplay.Format(Version)}</link>";
+                string line = HFLocalization.Tr("hostfix.hud.credit_line", VersionDisplay.Format(Version));
                 int nl = text.IndexOf('\n');
                 text = nl >= 0
                     ? text.Substring(0, nl + 1) + line + "\n" + text.Substring(nl + 1)
@@ -632,7 +645,7 @@ public class HostFixPlugin : BasePlugin
             // mod already added it this frame, so "Modded by DaUnknown" appears at most once.
             if (CreditVisible() && !text.Contains("DaUnknown"))
             {
-                string credit = "\n<size=70%>Modded by <color=#FCCE03FF>DaUnknown</color></size>";
+                string credit = "\n" + HFLocalization.Tr("hostfix.hud.modded_by_credit").TrimStart();
                 int anchor = text.IndexOf("Bavari");
                 if (anchor >= 0)
                 {

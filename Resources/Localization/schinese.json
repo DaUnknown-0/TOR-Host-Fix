@@ -1,0 +1,17 @@
+{
+ "hostfix.config.pluginname": "TOR - Hostfix",
+ "hostfix.config.enabled_desc": "启用此Mod",
+ "hostfix.config.snitchfallback_desc": "启用仅限房主的Snitch房间重新广播回退方案(修复4)。禁用后，Snitch身份揭示将完全交由UsefulTORStuff的客户端修复处理。",
+ "hostfix.modmanager.snitchfallback_label": "Snitch回退方案",
+ "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
+ "hostfix.hud.modded_by_credit": "\n<size=70%>制作: <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.updater.popup_updating": "正在更新 TOR - Hostfix\n请稍候...",
+ "hostfix.updater.popup_downloading_progress": "正在更新 TOR - Hostfix\n请稍候...\n正在下载...\n{0}",
+ "hostfix.updater.popup_failed": "更新未成功\n请稍后重试，\n或手动更新。",
+ "hostfix.updater.popup_copying": "正在更新 TOR - Hostfix\n请稍候...\n\n下载完成\n正在复制文件...",
+ "hostfix.updater.popup_success": "TOR - Hostfix\n更新成功\n请重启游戏。",
+ "hostfix.updater.button_label": "更新 TOR - Hostfix",
+ "hostfix.updater.announcement_body": "<size=150%>TOR - HOSTFIX 新版本 {0} 现已可用</size>\n{1}",
+ "hostfix.updater.announcement_title": "TOR - Hostfix 公告",
+ "hostfix.updater.announcement_shorttitle": "TOR - Hostfix 更新"
+}

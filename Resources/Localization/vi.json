@@ -1,0 +1,17 @@
+{
+ "hostfix.config.pluginname": "TOR - Hostfix",
+ "hostfix.config.enabled_desc": "Bật mod này",
+ "hostfix.config.snitchfallback_desc": "Bật tính năng dự phòng chỉ dành cho Chủ Phòng để phát lại thông tin phòng của Snitch (Fix 4). Tắt để để việc tiết lộ Snitch hoàn toàn phụ thuộc vào bản vá phía client của UsefulTORStuff.",
+ "hostfix.modmanager.snitchfallback_label": "Dự Phòng Snitch",
+ "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
+ "hostfix.hud.modded_by_credit": "\n<size=70%>Mod bởi <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.updater.popup_updating": "Đang cập nhật TOR - Hostfix\nVui lòng chờ...",
+ "hostfix.updater.popup_downloading_progress": "Đang cập nhật TOR - Hostfix\nVui lòng chờ...\nĐang tải xuống...\n{0}",
+ "hostfix.updater.popup_failed": "Cập nhật không thành công\nThử lại sau,\nhoặc cập nhật thủ công.",
+ "hostfix.updater.popup_copying": "Đang cập nhật TOR - Hostfix\nVui lòng chờ...\n\nTải xuống hoàn tất\nđang sao chép tệp...",
+ "hostfix.updater.popup_success": "TOR - Hostfix\nđã cập nhật thành công\nVui lòng khởi động lại trò chơi.",
+ "hostfix.updater.button_label": "Cập Nhật TOR - Hostfix",
+ "hostfix.updater.announcement_body": "<size=150%>Có bản cập nhật mới TOR - HOSTFIX lên {0}</size>\n{1}",
+ "hostfix.updater.announcement_title": "Thông Báo TOR - Hostfix",
+ "hostfix.updater.announcement_shorttitle": "Cập Nhật TOR - Hostfix"
+}

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <Version>1.0.16</Version>
+        <Version>1.0.23.1</Version>
         <Description>TOR - Hostfix - Fixes host cooldown freeze and missing Guesser assignment in TOR 4.8.0</Description>
         <Authors>TrackerTeam</Authors>
         <LangVersion>latest</LangVersion>
@@ -11,6 +11,12 @@
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <Platforms>AnyCPU</Platforms>
     </PropertyGroup>
+
+    <!-- Localization tables (HFLocalization): one flat JSON map per language (hostfix.* keys).
+         Explicit LogicalName so the lookup never depends on the root-namespace default. -->
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\Localization\*.json" LogicalName="HostFixPlugin.Resources.Localization.%(Filename)%(Extension)" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="AmongUs.GameLibs.Steam" Version="2024.10.29" />

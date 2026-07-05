@@ -1,0 +1,17 @@
+{
+ "hostfix.config.pluginname": "TOR - Hostfix",
+ "hostfix.config.enabled_desc": "Ota tämä modi käyttöön",
+ "hostfix.config.snitchfallback_desc": "Ota käyttöön isäntäkohtainen Snitch-huoneen uudelleenlähetys (Korjaus 4). Poista käytöstä jättääksesi Snitch-paljastuksen kokonaan UsefulTORStuffin client-puolen korjauksen varaan.",
+ "hostfix.modmanager.snitchfallback_label": "Snitch-varajärjestelmä",
+ "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
+ "hostfix.hud.modded_by_credit": "\n<size=70%>Modannut <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.updater.popup_updating": "Päivitetään TOR - Hostfix\nOdota...",
+ "hostfix.updater.popup_downloading_progress": "Päivitetään TOR - Hostfix\nOdota...\nLadataan...\n{0}",
+ "hostfix.updater.popup_failed": "Päivitys ei onnistunut\nYritä myöhemmin uudelleen,\ntai päivitä manuaalisesti.",
+ "hostfix.updater.popup_copying": "Päivitetään TOR - Hostfix\nOdota...\n\nLataus valmis\nkopioidaan tiedostoa...",
+ "hostfix.updater.popup_success": "TOR - Hostfix\npäivitettiin onnistuneesti\nKäynnistä peli uudelleen.",
+ "hostfix.updater.button_label": "Päivitä TOR - Hostfix",
+ "hostfix.updater.announcement_body": "<size=150%>Uusi TOR - HOSTFIX-päivitys versioon {0} on saatavilla</size>\n{1}",
+ "hostfix.updater.announcement_title": "TOR - Hostfix-ilmoitus",
+ "hostfix.updater.announcement_shorttitle": "TOR - Hostfix-päivitys"
+}

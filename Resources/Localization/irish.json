@@ -1,0 +1,17 @@
+{
+ "hostfix.config.pluginname": "TOR - Hostfix",
+ "hostfix.config.enabled_desc": "Cumasaigh an mod seo",
+ "hostfix.config.snitchfallback_desc": "Cumasaigh an cúltaca athchraolta seomra Snitch, atá ag obair ar an óstach amháin (Fix 4). Díchumasaigh chun nochtadh an Snitch a fhágáil go hiomlán ag deisiú thaobh an chliaint ó UsefulTORStuff.",
+ "hostfix.modmanager.snitchfallback_label": "Cúltaca Snitch",
+ "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
+ "hostfix.hud.modded_by_credit": "\n<size=70%>Modáilte ag <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.updater.popup_updating": "Ag nuashonrú TOR - Hostfix\nFan le do thoil...",
+ "hostfix.updater.popup_downloading_progress": "Ag nuashonrú TOR - Hostfix\nFan le do thoil...\nÁ íoslódáil...\n{0}",
+ "hostfix.updater.popup_failed": "Níor éirigh leis an nuashonrú\nTriail arís níos déanaí,\nnó nuashonraigh de láimh.",
+ "hostfix.updater.popup_copying": "Ag nuashonrú TOR - Hostfix\nFan le do thoil...\n\nÍoslódáil críochnaithe\nag cóipeáil an chomhaid...",
+ "hostfix.updater.popup_success": "TOR - Hostfix\nnuashonraithe go rathúil\nAtosaigh an cluiche le do thoil.",
+ "hostfix.updater.button_label": "Nuashonraigh TOR - Hostfix",
+ "hostfix.updater.announcement_body": "<size=150%>Tá nuashonrú nua TOR - HOSTFIX go dtí {0} ar fáil</size>\n{1}",
+ "hostfix.updater.announcement_title": "Fógra TOR - Hostfix",
+ "hostfix.updater.announcement_shorttitle": "Nuashonrú TOR - Hostfix"
+}
