@@ -599,66 +599,29 @@ public class HostFixPlugin : BasePlugin
     [HarmonyPriority(Priority.Low)] // run after TOR's own PingTracker postfix
     public static class VersionDisplayPatch
     {
-        // Credit toggle is shared across all three of our mods via a process-wide AppDomain flag
-        // (no cross-assembly references) — clicking any mod name flips the same flag, so clicking
-        // another hides it again. Keep this key string identical in the other mods.
-        private const string CreditKey = "TORMods.DaUnknownCreditVisible";
-
-        private static bool CreditVisible() =>
-            AppDomain.CurrentDomain.GetData(CreditKey) is bool b && b;
-
         public static void Postfix(PingTracker __instance)
         {
             if (__instance == null || __instance.text == null) return;
+            // Host-only: this plugin only needs to run on the host, so the version line is just
+            // for the host to confirm it's loaded — keep this guard, it predates the collective.
             if (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost) return;
 
             string text = __instance.text.text;
             if (string.IsNullOrEmpty(text)) return;
 
-            // Click the mod name to toggle the shared credit line. PingTracker.text is a world-space
-            // TextMeshPro (no canvas), so the link raycast needs the rendering camera.
-            if (Input.GetMouseButtonDown(0))
-            {
-                Camera cam = Camera.main;
-                var canvas = __instance.text.canvas;
-                if (canvas != null)
-                    cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null
-                        : (canvas.worldCamera != null ? canvas.worldCamera : Camera.main);
-                int link = TMPro.TMP_TextUtilities.FindIntersectingLink(__instance.text, Input.mousePosition, cam);
-                if (link != -1 && __instance.text.textInfo.linkInfo[link].GetLinkID() == "hostFixCredits")
-                    AppDomain.CurrentDomain.SetData(CreditKey, !CreditVisible());
-            }
+            // The localized string still carries this mod's own old <link> wrapper (its click used
+            // to toggle the credit line by itself); UnknownsCollective.Render() now supplies its
+            // own wrapper and click handling, so strip the old one here rather than touching every
+            // locale file's hostfix.hud.credit_line entry.
+            string rawLine = HFLocalization.Tr("hostfix.hud.credit_line", VersionDisplay.Format(Version));
+            const string linkOpen = "<link=\"hostFixCredits\">";
+            const string linkClose = "</link>";
+            string line = rawLine;
+            if (line.StartsWith(linkOpen) && line.EndsWith(linkClose))
+                line = line.Substring(linkOpen.Length, line.Length - linkOpen.Length - linkClose.Length);
 
-            // Clickable mod name, inserted just below the "TheOtherRoles vX" line.
-            // P2.3: Marker-Guard gegen frame-weises Stapeln, falls TOR den Text künftig nicht mehr
-            // jeden Frame neu aufbaut (normalerweise ist die Zeile abwesend und wird eingefügt).
-            if (!text.Contains("hostFixCredits"))
-            {
-                string line = HFLocalization.Tr("hostfix.hud.credit_line", VersionDisplay.Format(Version));
-                int nl = text.IndexOf('\n');
-                text = nl >= 0
-                    ? text.Substring(0, nl + 1) + line + "\n" + text.Substring(nl + 1)
-                    : text + "\n" + line;
-            }
-
-            // Insert the shared credit under TOR's "Design by Bavari" line — but only if no other
-            // mod already added it this frame, so "Modded by DaUnknown" appears at most once.
-            if (CreditVisible() && !text.Contains("DaUnknown"))
-            {
-                string credit = "\n" + HFLocalization.Tr("hostfix.hud.modded_by_credit").TrimStart();
-                int anchor = text.IndexOf("Bavari");
-                if (anchor >= 0)
-                {
-                    int lineEnd = text.IndexOf('\n', anchor);
-                    text = lineEnd >= 0
-                        ? text.Substring(0, lineEnd) + credit + text.Substring(lineEnd)
-                        : text + credit;
-                }
-                else
-                {
-                    text += credit;
-                }
-            }
+            UnknownsCollective.Contribute(PluginGuid, line);
+            text = UnknownsCollective.Render(__instance.text, text);
 
             __instance.text.text = text;
         }
