@@ -366,6 +366,16 @@ public class HostFixPlugin : BasePlugin
         private static float _disconnectCheckTimer;
         private static bool _loggedReset;
 
+        // AUDIT-2026-08-16: the two RoleDraft fields below are read via reflection every single
+        // frame for the entire round, not just the short draft phase. Throttle the reflection poll
+        // itself to the same 0.2s cadence the file already uses for its cheaper timers, instead of
+        // doing it every Update(). We accumulate the REAL elapsed time since the last poll (not just
+        // one frame's deltaTime) and feed that into _stuckTimer/_disconnectCheckTimer below, so the
+        // 15s/3s thresholds still fire at the same real-world time as before - only the reflection
+        // call itself gets cheaper, visible behavior is unchanged.
+        private static float _pollTimer;
+        private const float PollInterval = 0.2f;
+
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)] // Run after TOR's own HudManager patch
         public static void Postfix()
@@ -379,6 +389,7 @@ public class HostFixPlugin : BasePlugin
                 if (AmongUsClient.Instance.GameState != InnerNet.InnerNetClient.GameStates.Started)
                 {
                     _stuckTimer = 0f;
+                    _pollTimer = 0f;
                     _loggedReset = false;
                     // P0.4: Spiel läuft nicht (mehr) — ein noch eingeplantes Re-Broadcast verwerfen,
                     // damit es nicht ins nächste Spiel überspringt.
@@ -389,6 +400,13 @@ public class HostFixPlugin : BasePlugin
                 // Fix 4's delayed Snitch re-broadcast. Runs regardless of the draft state below
                 // (the draft is idle during meetings), so flush it before the isRunning early-out.
                 SnitchHostRoomFix.Tick();
+
+                // AUDIT-2026-08-16: only actually poll the reflected TOR fields every PollInterval
+                // seconds instead of every frame - see field comment above.
+                _pollTimer += Time.deltaTime;
+                if (_pollTimer < PollInterval) return;
+                float elapsed = _pollTimer;
+                _pollTimer = 0f;
 
                 bool isRunning = (bool)RoleDraftIsRunningField.GetValue(null);
                 if (!isRunning)
@@ -406,7 +424,7 @@ public class HostFixPlugin : BasePlugin
                 {
                     // Draft should be done (no more picks), but isRunning is still true.
                     // Give a grace period for the post-draft fade + assignment code.
-                    _stuckTimer += Time.deltaTime;
+                    _stuckTimer += elapsed;
 
                     if (_stuckTimer > 15f)
                     {
@@ -425,7 +443,7 @@ public class HostFixPlugin : BasePlugin
                 {
                     // Draft has picks remaining — check for disconnected current picker
                     _stuckTimer = 0f;
-                    _disconnectCheckTimer += Time.deltaTime;
+                    _disconnectCheckTimer += elapsed;
                     if (_disconnectCheckTimer >= 3f)
                     {
                         _disconnectCheckTimer = 0f;
