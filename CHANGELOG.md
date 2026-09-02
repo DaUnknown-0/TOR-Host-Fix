@@ -1,5 +1,14 @@
 # Changelog — TOR - Hostfix
 
+## Unreleased
+
+### Performance (Audit 2026-09-01)
+- **Versionszeile** (`VersionDisplayPatch`): die HUD-Zeile wurde jeden Frame neu formatiert, nur
+  um sie mit ihrem Cache zu vergleichen. Jetzt entscheiden die Identität der übersetzten Vorlage
+  und der Testversionen-Schalter, wann neu gebaut wird.
+- **Collective-HUD-Zeile** (`UnknownsCollective.cs`, in allen fünf Mods gleich): Block gecacht,
+  neu nur bei geänderter Mitgliedszeile, Anzahl, Auf-/Zuklappen oder Lobby-/Runden-Wechsel.
+
 ## 1.0.16
 
 Patch bump. Host-only plugin; no cross-client wire changes.

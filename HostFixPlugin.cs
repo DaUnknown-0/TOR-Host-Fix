@@ -52,7 +52,7 @@ public class HostFixPlugin : BasePlugin
 {
     public const string PluginGuid = "com.trackerteam.hostfix";
     public const string PluginName = "TOR - Hostfix";
-    public const string PluginVersion = "1.0.23.5";
+    public const string PluginVersion = "1.0.25.4";
     public static readonly System.Version Version = System.Version.Parse(PluginVersion);
 
     public static ManualLogSource Logger { get; private set; }
@@ -618,7 +618,8 @@ public class HostFixPlugin : BasePlugin
     public static class VersionDisplayPatch
     {
         private static string cachedLine;
-        private static string cachedForRaw;
+        private static string cachedTemplate;
+        private static bool cachedShowTest;
 
         public static void Postfix(PingTracker __instance)
         {
@@ -630,20 +631,23 @@ public class HostFixPlugin : BasePlugin
             string text = __instance.text.text;
             if (string.IsNullOrEmpty(text)) return;
 
-            // The localized string still carries this mod's own old <link> wrapper (its click used
-            // to toggle the credit line by itself); UnknownsCollective.Render() now supplies its
-            // own wrapper and click handling, so strip the old one here rather than touching every
-            // locale file's hostfix.hud.credit_line entry.
-            string rawLine = HFLocalization.Tr("hostfix.hud.credit_line", VersionDisplay.Format(Version));
-
-            // PERF: the strip below only has to run when the translated line actually changes,
-            // which is at a language switch - not sixty times a second. Keyed on the raw string
-            // rather than hooked to HFLocalization.LanguageApplied: one string compare costs
-            // nothing next to the StartsWith/EndsWith/Substring it replaces, and it is
-            // self-healing if the line ever changes by a path that does not raise that event.
-            if (cachedLine == null || !string.Equals(cachedForRaw, rawLine, StringComparison.Ordinal))
+            // PERF: the line only changes at a language switch or when the test-version toggle
+            // flips. The previous build re-formatted it every frame (Version.ToString + a
+            // string.Format) just to compare the result against the cache. The translated
+            // TEMPLATE is a stable dictionary instance until the tables reload, so a reference
+            // compare on it (plus the toggle) is the whole change detector, and it stays
+            // self-healing without a LanguageApplied subscription.
+            string template = HFLocalization.Tr("hostfix.hud.credit_line");
+            bool showTest = VersionDisplay.ShowTestVersions();
+            if (cachedLine == null || !ReferenceEquals(template, cachedTemplate) || showTest != cachedShowTest)
             {
-                cachedForRaw = rawLine;
+                cachedTemplate = template;
+                cachedShowTest = showTest;
+                // The localized string still carries this mod's own old <link> wrapper (its click
+                // used to toggle the credit line by itself); UnknownsCollective.Render() now
+                // supplies its own wrapper and click handling, so strip the old one here rather
+                // than touching every locale file's hostfix.hud.credit_line entry.
+                string rawLine = HFLocalization.Tr("hostfix.hud.credit_line", VersionDisplay.Format(Version));
                 const string linkOpen = "<link=\"hostFixCredits\">";
                 const string linkClose = "</link>";
                 string line = rawLine;
