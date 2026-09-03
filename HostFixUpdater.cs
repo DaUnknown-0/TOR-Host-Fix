@@ -162,6 +162,18 @@ namespace HostFixPlugin {
             }
 
             var asset = release.Assets.Find(FilterPluginAsset);
+            if (asset == null) {
+                // Assets.Find liefert null, wenn das Release keine passende Datei enthaelt
+                // (z. B. Namensaenderung). asset.DownloadUrl darunter waere ein NullReferenceException.
+                HostFixPlugin.Logger?.LogError("[HostFix] Update failed: release asset not found.");
+                _updateState = 3;
+                if (!managerMode) {
+                    popup.TextAreaTMP.text = HFLocalization.Tr("hostfix.updater.popup_failed");
+                    button.SetActive(true);
+                }
+                _busy = false;
+                yield break;
+            }
             var www = new UnityWebRequest();
             www.SetMethod(UnityWebRequest.UnityWebRequestMethod.Get);
             www.SetUrl(asset.DownloadUrl);
@@ -193,8 +205,25 @@ namespace HostFixPlugin {
 
             var filePath = Path.Combine(Paths.PluginPath, asset.Name);
 
-            if (File.Exists(filePath + ".old")) File.Delete(filePath + ".old");
-            if (File.Exists(filePath)) File.Move(filePath, filePath + ".old");
+            // Move the working DLL aside before writing the download, so a write failure below can
+            // roll back to it instead of leaving the plugin folder without a usable HostFix at all.
+            // Guarded in its own try/catch: a locked .old (virus scanner, another process) must not
+            // silently proceed and overwrite the still-working plugin file.
+            var moved = false;
+            try {
+                if (File.Exists(filePath + ".old")) File.Delete(filePath + ".old");
+                if (File.Exists(filePath)) File.Move(filePath, filePath + ".old");
+                moved = true;
+            } catch (Exception e) {
+                HostFixPlugin.Logger?.LogError($"[HostFix] Update failed: could not move the old plugin file aside ({e.Message}).");
+                _updateState = 3;
+                if (!managerMode) {
+                    popup.TextAreaTMP.text = HFLocalization.Tr("hostfix.updater.popup_failed");
+                    button.SetActive(true);
+                }
+                _busy = false;
+                yield break;
+            }
 
             var persistTask = File.WriteAllBytesAsync(filePath, www.downloadHandler.data);
             var hasError = false;
@@ -206,6 +235,11 @@ namespace HostFixPlugin {
 
                 yield return new WaitForEndOfFrame();
             }
+            // AUDIT-2026-08-15: Task.IsCompleted is also true for Faulted/Canceled, so a task that
+            // already failed by the very first check never enters the loop above and hasError stays
+            // false. Re-check after the loop so a write failure is never reported as a successful
+            // update. IsCompletedSuccessfully covers Faulted AND Canceled in one check.
+            if (!hasError && !persistTask.IsCompletedSuccessfully) hasError = true;
 
             www.downloadHandler.Dispose();
             www.Dispose();
@@ -216,7 +250,31 @@ namespace HostFixPlugin {
                     popup.TextAreaTMP.text = HFLocalization.Tr("hostfix.updater.popup_success");
                 }
             } else {
+                // ROLL BACK. The working DLL was moved aside to .old before the download was written,
+                // so a failed write used to leave the plugin folder with no usable HostFix at all (a
+                // half-written file, or nothing) and the mod simply stopped loading on the next start.
+                // Putting the old file back makes a failed update a no-op again.
+                try {
+                    if (moved && File.Exists(filePath + ".old")) {
+                        if (File.Exists(filePath)) File.Delete(filePath);
+                        File.Move(filePath + ".old", filePath);
+                        HostFixPlugin.Logger?.LogWarning("[HostFix] Update failed - restored the previous plugin file.");
+                    } else if (File.Exists(filePath)) {
+                        // Erstinstallation ohne Vorgaengerdatei: es gibt keine .old zum Zurueckspielen,
+                        // die halb geschriebene neue DLL darf trotzdem nicht liegen bleiben, sonst
+                        // laedt der Mod beim naechsten Start eine kaputte Datei.
+                        try { File.Delete(filePath); } catch { }
+                    }
+                } catch (Exception e) {
+                    HostFixPlugin.Logger?.LogError(
+                        $"[HostFix] Update failed AND the previous plugin file could not be restored "
+                        + $"({e.Message}). Reinstall HostFix manually: the working DLL is next to it, "
+                        + $"named \"{PluginAssetName}.old\".");
+                }
                 _updateState = 3;
+                if (!managerMode) {
+                    popup.TextAreaTMP.text = HFLocalization.Tr("hostfix.updater.popup_failed");
+                }
             }
             if (!managerMode) button.SetActive(true);
             _busy = false;

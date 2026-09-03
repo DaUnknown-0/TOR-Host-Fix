@@ -356,7 +356,9 @@ public class HostFixPlugin : BasePlugin
     // Uses attribute-based patching (works reliably with IL2CPP).
     // Monitors RoleDraft.isRunning during active gameplay:
     //   - If pickOrder is empty but isRunning is true → draft is stuck → reset
-    //   - If pickOrder has entries but current picker is disconnected → remove
+    //   - If pickOrder has entries, remove every disconnected/missing picker in it, not just
+    //     the head → a picker who leaves further down the queue (not the one currently
+    //     picking) would otherwise leave that same stale entry sitting there forever
     // ========================================================================
 
     [HarmonyPatch(typeof(HudManager), nameof(HudManager.Update))]
@@ -461,23 +463,29 @@ public class HostFixPlugin : BasePlugin
         {
             if (pickOrder.Count == 0) return;
 
-            byte currentPickerId = pickOrder[0];
-            PlayerControl picker = null;
-
-            foreach (var pc in PlayerControl.AllPlayerControls)
+            // Every position, not just the head: a picker who disconnects further down the
+            // queue leaves the same stale id sitting there forever if only pickOrder[0] is ever
+            // checked. Walk backwards so RemoveAt doesn't shift not-yet-checked indices under us.
+            for (int i = pickOrder.Count - 1; i >= 0; i--)
             {
-                if (pc != null && pc.PlayerId == currentPickerId)
+                byte pickerId = pickOrder[i];
+                PlayerControl picker = null;
+
+                foreach (var pc in PlayerControl.AllPlayerControls)
                 {
-                    picker = pc;
-                    break;
+                    if (pc != null && pc.PlayerId == pickerId)
+                    {
+                        picker = pc;
+                        break;
+                    }
                 }
-            }
 
-            if (picker == null || picker.Data == null || picker.Data.Disconnected)
-            {
-                pickOrder.RemoveAt(0);
-                Logger.LogWarning(
-                    $"[Fix3] Removed disconnected picker (ID {currentPickerId}) from draft.");
+                if (picker == null || picker.Data == null || picker.Data.Disconnected)
+                {
+                    pickOrder.RemoveAt(i);
+                    Logger.LogWarning(
+                        $"[Fix3] Removed disconnected picker (ID {pickerId}) from draft (position {i}).");
+                }
             }
         }
     }

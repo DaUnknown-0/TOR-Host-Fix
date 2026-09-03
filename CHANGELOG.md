@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Bug-Audit 2026-09-03
+- **Draft-Picker-Entfernung** (`HostFixPlugin.cs`, Fix 3 `RemoveDisconnectedPicker`): disconnectete
+  Spieler wurden nur entfernt, wenn sie ganz vorne in der Draft-pickOrder standen. TORs eigener
+  Draft-Code iteriert aber die komplette Liste und warf weiterhin, wenn ein disconnecteter Spieler
+  weiter hinten in der Warteschlange stand. Jetzt wird jede Position geprüft, nicht nur der Kopf.
+- **Updater-Fehlerbehandlung** (`HostFixUpdater.cs`): ein fehlgeschlagener Schreibvorgang wurde als
+  Erfolg gemeldet, obwohl die alte DLL bereits nach `.old` verschoben war (die beim nächsten Start
+  gelöscht wird), sodass am Ende keine funktionsfähige HostFix-Datei mehr übrig war. Jetzt sorgt
+  eine `IsCompletedSuccessfully`-Prüfung nach dem Schreiben, try/catch um den Move der alten Datei,
+  ein Rollback auf die alte Datei bei Fehlschlag, das Löschen einer halb geschriebenen Datei ohne
+  Vorgänger und ein Null-Guard für ein fehlendes Release-Asset dafür, dass ein misslungenes Update
+  wieder ein No-op bleibt statt den Mod lahmzulegen.
+
 ### Performance (Audit 2026-09-01)
 - **Versionszeile** (`VersionDisplayPatch`): die HUD-Zeile wurde jeden Frame neu formatiert, nur
   um sie mit ihrem Cache zu vergleichen. Jetzt entscheiden die Identität der übersetzten Vorlage
