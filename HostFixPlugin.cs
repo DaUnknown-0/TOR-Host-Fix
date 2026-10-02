@@ -52,7 +52,7 @@ public class HostFixPlugin : BasePlugin
 {
     public const string PluginGuid = "com.trackerteam.hostfix";
     public const string PluginName = "TOR - Hostfix";
-    public const string PluginVersion = "1.0.27";
+    public const string PluginVersion = "1.0.27.1";
     public static readonly System.Version Version = System.Version.Parse(PluginVersion);
 
     public static ManualLogSource Logger { get; private set; }
@@ -462,6 +462,7 @@ public class HostFixPlugin : BasePlugin
         private static void RemoveDisconnectedPicker(List<byte> pickOrder)
         {
             if (pickOrder.Count == 0) return;
+            bool removed = false;
 
             // Every position, not just the head: a picker who disconnects further down the
             // queue leaves the same stale id sitting there forever if only pickOrder[0] is ever
@@ -483,9 +484,44 @@ public class HostFixPlugin : BasePlugin
                 if (picker == null || picker.Data == null || picker.Data.Disconnected)
                 {
                     pickOrder.RemoveAt(i);
+                    removed = true;
                     Logger.LogWarning(
                         $"[Fix3] Removed disconnected picker (ID {pickerId}) from draft (position {i}).");
                 }
+            }
+
+            // The list above is only the HOST's copy. Every client walks its own pickOrder, which TOR
+            // only replaces through its DraftModePickOrder RPC; without a resend the clients waited for
+            // the stale id forever, or stayed on the black draft screen after the host finished (Opus
+            // audit 2026-10-02). Resend the cleaned order exactly the way TOR sends it.
+            if (removed) BroadcastPickOrder(pickOrder);
+        }
+
+        private static byte pickOrderRpc = 255;
+        private static bool pickOrderRpcResolved;
+
+        private static void BroadcastPickOrder(List<byte> pickOrder)
+        {
+            try
+            {
+                if (!pickOrderRpcResolved)
+                {
+                    pickOrderRpcResolved = true;
+                    var enumType = AccessTools.TypeByName("TheOtherRoles.CustomRPC");
+                    if (enumType != null && Enum.IsDefined(enumType, "DraftModePickOrder"))
+                        pickOrderRpc = Convert.ToByte(Enum.Parse(enumType, "DraftModePickOrder"));
+                    else Logger.LogWarning("[Fix3] CustomRPC.DraftModePickOrder not found - clients are not updated.");
+                }
+                if (pickOrderRpc == 255 || PlayerControl.LocalPlayer == null || AmongUsClient.Instance == null) return;
+                var writer = AmongUsClient.Instance.StartRpcImmediately(PlayerControl.LocalPlayer.NetId, pickOrderRpc, SendOption.Reliable, -1);
+                writer.Write((byte)pickOrder.Count);
+                foreach (var id in pickOrder) writer.Write(id);
+                AmongUsClient.Instance.FinishRpcImmediately(writer);
+                Logger.LogInfo($"[Fix3] cleaned pick order sent to every client ({pickOrder.Count} left).");
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"[Fix3] pick order resend failed: {e}");
             }
         }
     }
@@ -622,13 +658,13 @@ public class HostFixPlugin : BasePlugin
     // ========================================================================
 
     [HarmonyPatch(typeof(PingTracker), nameof(PingTracker.Update))]
-    [HarmonyPriority(Priority.Low)] // run after TOR's own PingTracker postfix
     public static class VersionDisplayPatch
     {
         private static string cachedLine;
         private static string cachedTemplate;
         private static bool cachedShowTest;
 
+        [HarmonyPriority(Priority.Low)]  // run after TOR's own PingTracker postfix
         public static void Postfix(PingTracker __instance)
         {
             if (__instance == null || __instance.text == null) return;
