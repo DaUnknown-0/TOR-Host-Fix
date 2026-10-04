@@ -84,8 +84,11 @@ namespace HostFixPlugin {
             } catch { return "en"; }
         }
 
+        // internal, not private: HostFixPlugin patches these two classes by type. PatchAll(typeof(
+        // HFLocalization)) only reads the outer class and never applied them (no epoch/language
+        // change was ever picked up after the initial load).
         [HarmonyPatch(typeof(HudManager), nameof(HudManager.Update))]
-        private static class PollPatch {
+        internal static class PollPatch {
             public static void Postfix() {
                 if (UnityEngine.Time.unscaledTime < nextPoll) return;
                 nextPoll = UnityEngine.Time.unscaledTime + 0.5f;
@@ -94,7 +97,7 @@ namespace HostFixPlugin {
         }
 
         [HarmonyPatch(typeof(MainMenuManager), nameof(MainMenuManager.Start))]
-        private static class MenuPatch {
+        internal static class MenuPatch {
             public static void Postfix() => CheckForChange();
         }
 

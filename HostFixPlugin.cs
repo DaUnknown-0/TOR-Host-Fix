@@ -52,7 +52,7 @@ public class HostFixPlugin : BasePlugin
 {
     public const string PluginGuid = "com.trackerteam.hostfix";
     public const string PluginName = "TOR - Hostfix";
-    public const string PluginVersion = "1.0.28";
+    public const string PluginVersion = "1.0.28.1";
     public static readonly System.Version Version = System.Version.Parse(PluginVersion);
 
     public static ManualLogSource Logger { get; private set; }
@@ -157,8 +157,10 @@ public class HostFixPlugin : BasePlugin
         // Version display in the top-corner PingTracker (host only).
         harmony.PatchAll(typeof(VersionDisplayPatch));
 
-        // Localization change detection (HudManager.Update poll + MainMenuManager.Start).
-        harmony.PatchAll(typeof(HFLocalization));
+        // Localization change detection (HudManager.Update poll + MainMenuManager.Start). The patch
+        // classes are nested, and PatchAll(Type) does not descend into nested classes.
+        harmony.PatchAll(typeof(HFLocalization.PollPatch));
+        harmony.PatchAll(typeof(HFLocalization.MenuPatch));
 
         // Self-updater: checks GitHub releases and offers an in-game update button.
         AddComponent<HostFixUpdater>();
