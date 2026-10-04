@@ -5,13 +5,15 @@
 /*
  * HostFixPlugin - External fix for TOR 4.8.0 host bugs
  *
- * Fixes these issues without modifying TOR source:
- *   1. Host cooldowns freezing (RoleDraft.isRunning stuck at true)
+ * Fixes these issues without modifying TOR source (numbers match the "Fix N" sections below):
+ *   1. Host cooldowns freezing (RoleDraft.isRunning stuck at true): reset in resetVariables().
  *   2. Any host-only role/modifier/target assignment exception in the draft
- *      coroutine (covers Guesser gamemode, Lawyer target, and modifiers)
- *   3. Snitch reveal missing an evil HOST (TOR resets the room map mid-prefix,
- *      dropping the host's early ShareRoom — the host re-broadcasts its room on a
- *      short delay so it lands after the reset, inside the reveal window)
+ *      coroutine (covers Guesser gamemode, Lawyer target, and modifiers).
+ *   3. Safety net in HudManager.Update: resets a draft stuck with an empty pick order, and
+ *      removes disconnected pickers from the pick order (re-sent to every client).
+ *   4. Snitch reveal missing an evil HOST (TOR resets the room map mid-prefix,
+ *      dropping the host's early ShareRoom; the host re-broadcasts its room on a
+ *      short delay so it lands after the reset, inside the reveal window).
  *
  * Strategy: minimal, defensive patches. Don't replace TOR methods — just
  * guard them with try-catch and reset stuck state. This way, if TOR updates
@@ -52,7 +54,7 @@ public class HostFixPlugin : BasePlugin
 {
     public const string PluginGuid = "com.trackerteam.hostfix";
     public const string PluginName = "TOR - Hostfix";
-    public const string PluginVersion = "1.0.28.1";
+    public const string PluginVersion = "1.0.28.2";
     public static readonly System.Version Version = System.Version.Parse(PluginVersion);
 
     public static ManualLogSource Logger { get; private set; }
@@ -347,6 +349,15 @@ public class HostFixPlugin : BasePlugin
                 string name = __originalMethod?.Name ?? "unknown";
                 Logger.LogError($"[Fix2] {name} crashed: {__exception.Message}");
                 Logger.LogWarning("[Fix2] Exception swallowed to protect RoleDraft coroutine.");
+                // The host saw nothing of it (audit 2026-10-04): a Lawyer without a target or a half
+                // modifier assignment went unnoticed. A line in the corner notifier says so.
+                try
+                {
+                    var hud = HudManager.Instance;
+                    if (hud != null && hud.Notifier != null)
+                        hud.Notifier.AddDisconnectMessage(string.Format(HFLocalization.Tr("hostfix.hud.assignment_failed"), name));
+                }
+                catch { }
             }
             return null; // Swallow exception
         }
@@ -502,6 +513,34 @@ public class HostFixPlugin : BasePlugin
         private static byte pickOrderRpc = 255;
         private static bool pickOrderRpcResolved;
 
+        // TOR's receivePickOrder swaps only the list; the pick timer kept running, so the next picker
+        // inherited the time the leaver had used and at timer >= maxTimer got a random role at once
+        // (audit 2026-10-04). The host resets its own timer, and asks every client with UTS to do the
+        // same: [240 UTSRpc channel][237 DraftTimerReset]. HostFix has no code on the clients itself.
+        private static FieldInfo draftTimerField;
+        private static bool draftTimerResolved;
+
+        private static void ResetPickTimer()
+        {
+            try
+            {
+                if (!draftTimerResolved)
+                {
+                    draftTimerResolved = true;
+                    var t = AccessTools.TypeByName("TheOtherRoles.Modules.RoleDraft");
+                    draftTimerField = t != null ? AccessTools.Field(t, "timer") : null;
+                }
+                draftTimerField?.SetValue(null, 0f);
+                var writer = AmongUsClient.Instance.StartRpcImmediately(PlayerControl.LocalPlayer.NetId, 240, SendOption.Reliable, -1);
+                writer.Write((byte)237);
+                AmongUsClient.Instance.FinishRpcImmediately(writer);
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning($"[Fix3] pick timer reset failed: {e.Message}");
+            }
+        }
+
         private static void BroadcastPickOrder(List<byte> pickOrder)
         {
             try
@@ -520,6 +559,7 @@ public class HostFixPlugin : BasePlugin
                 foreach (var id in pickOrder) writer.Write(id);
                 AmongUsClient.Instance.FinishRpcImmediately(writer);
                 Logger.LogInfo($"[Fix3] cleaned pick order sent to every client ({pickOrder.Count} left).");
+                ResetPickTimer();
             }
             catch (Exception e)
             {
@@ -672,7 +712,9 @@ public class HostFixPlugin : BasePlugin
             if (__instance == null || __instance.text == null) return;
             // Host-only: this plugin only needs to run on the host, so the version line is just
             // for the host to confirm it's loaded — keep this guard, it predates the collective.
-            if (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost) return;
+            // Not (or no longer) host: take the line out of the shared block as well, it stayed there
+            // after joining someone else's lobby (audit 2026-10-04).
+            if (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost) { UnknownsCollective.Withdraw(PluginGuid); return; }
 
             string text = __instance.text.text;
             if (string.IsNullOrEmpty(text)) return;

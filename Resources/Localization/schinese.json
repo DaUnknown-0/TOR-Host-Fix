@@ -5,6 +5,7 @@
  "hostfix.modmanager.snitchfallback_label": "Snitch回退方案",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>制作: <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.hud.assignment_failed": "HostFix：{0} 失败（见日志）。如果角色看起来不对，请重新开始本回合。",
  "hostfix.updater.popup_updating": "正在更新 TOR - Hostfix\n请稍候...",
  "hostfix.updater.popup_downloading_progress": "正在更新 TOR - Hostfix\n请稍候...\n正在下载...\n{0}",
  "hostfix.updater.popup_failed": "更新未成功\n请稍后重试，\n或手动更新。",

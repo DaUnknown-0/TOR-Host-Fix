@@ -5,6 +5,7 @@
  "hostfix.modmanager.snitchfallback_label": "Snitch Fallback",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>Modat de <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.hud.assignment_failed": "HostFix: {0} a eșuat (vezi jurnalul). Dacă rolurile par greșite, repornește runda.",
  "hostfix.updater.popup_updating": "Se actualizează TOR - Hostfix\nTe rugăm să aștepți...",
  "hostfix.updater.popup_downloading_progress": "Se actualizează TOR - Hostfix\nTe rugăm să aștepți...\nSe descarcă...\n{0}",
  "hostfix.updater.popup_failed": "Actualizarea nu a reușit\nÎncearcă din nou mai târziu\nsau actualizează manual.",

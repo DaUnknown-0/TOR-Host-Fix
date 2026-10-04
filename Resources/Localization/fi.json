@@ -5,6 +5,7 @@
  "hostfix.modmanager.snitchfallback_label": "Snitch-varajärjestelmä",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>Modannut <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.hud.assignment_failed": "HostFix: {0} epäonnistui (katso loki). Jos roolit näyttävät väärin, käynnistä kierros uudelleen.",
  "hostfix.updater.popup_updating": "Päivitetään TOR - Hostfix\nOdota...",
  "hostfix.updater.popup_downloading_progress": "Päivitetään TOR - Hostfix\nOdota...\nLadataan...\n{0}",
  "hostfix.updater.popup_failed": "Päivitys ei onnistunut\nYritä myöhemmin uudelleen,\ntai päivitä manuaalisesti.",

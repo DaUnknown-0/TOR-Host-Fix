@@ -5,6 +5,7 @@
  "hostfix.modmanager.snitchfallback_label": "Snitchフォールバック",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>Mod制作: <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.hud.assignment_failed": "HostFix：{0} が失敗しました (ログを参照)。役職がおかしい場合はラウンドを再開してください。",
  "hostfix.updater.popup_updating": "TOR - Hostfix を更新中\nお待ちください...",
  "hostfix.updater.popup_downloading_progress": "TOR - Hostfix を更新中\nお待ちください...\nダウンロード中...\n{0}",
  "hostfix.updater.popup_failed": "更新に失敗しました\n後でもう一度試すか、\n手動で更新してください。",

@@ -5,6 +5,7 @@
  "hostfix.modmanager.snitchfallback_label": "Fallback Snitch",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>Moddato da <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.hud.assignment_failed": "HostFix: {0} non è riuscito (vedi il log). Se i ruoli sembrano sbagliati, riavvia il round.",
  "hostfix.updater.popup_updating": "Aggiornamento di TOR - Hostfix\nAttendere prego...",
  "hostfix.updater.popup_downloading_progress": "Aggiornamento di TOR - Hostfix\nAttendere prego...\nDownload in corso...\n{0}",
  "hostfix.updater.popup_failed": "L'aggiornamento non è riuscito\nRiprova più tardi,\noppure aggiorna manualmente.",

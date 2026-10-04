@@ -5,6 +5,7 @@
  "hostfix.modmanager.snitchfallback_label": "Dự Phòng Snitch",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>Mod bởi <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.hud.assignment_failed": "HostFix: {0} thất bại (xem nhật ký). Nếu vai trò trông sai, hãy khởi động lại vòng chơi.",
  "hostfix.updater.popup_updating": "Đang cập nhật TOR - Hostfix\nVui lòng chờ...",
  "hostfix.updater.popup_downloading_progress": "Đang cập nhật TOR - Hostfix\nVui lòng chờ...\nĐang tải xuống...\n{0}",
  "hostfix.updater.popup_failed": "Cập nhật không thành công\nThử lại sau,\nhoặc cập nhật thủ công.",

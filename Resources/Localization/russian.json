@@ -5,6 +5,7 @@
  "hostfix.modmanager.snitchfallback_label": "Резерв Snitch",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>Модификация: <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.hud.assignment_failed": "HostFix: {0} не удалось (см. лог). Если роли выглядят неправильно, перезапусти раунд.",
  "hostfix.updater.popup_updating": "Обновление TOR - Hostfix\nПожалуйста, подождите...",
  "hostfix.updater.popup_downloading_progress": "Обновление TOR - Hostfix\nПожалуйста, подождите...\nЗагрузка...\n{0}",
  "hostfix.updater.popup_failed": "Обновление не удалось\nПопробуйте позже,\nили обновите вручную.",

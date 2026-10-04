@@ -47,6 +47,17 @@ namespace HostFixPlugin {
         // Mod Manager abgefragt, um die gesammelte Update-Ankündigung erst nach allen Checks zu zeigen.
         private bool _checkCompleted;
 
+        // The folder the running DLL was loaded from (audit 2026-10-04): BepInEx loads plugins from
+        // sub-folders too (mod-manager layouts), and writing the update into plugins\ itself left a
+        // second copy with the same GUID beside the old one. Falls back to plugins\.
+        private static string PluginDir() {
+            try {
+                var dir = Path.GetDirectoryName(typeof(HostFixUpdater).Assembly.Location);
+                if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir)) return dir;
+            } catch { }
+            return Paths.PluginPath;
+        }
+
         public void Awake() {
             if (Instance) Destroy(Instance);
             Instance = this;
@@ -55,7 +66,7 @@ namespace HostFixPlugin {
             // aborts the component's initialisation, so the updater silently did not exist for the
             // rest of the session. Cleaning up a leftover file is not worth that.
             try {
-                foreach (var file in Directory.GetFiles(Paths.PluginPath, PluginAssetName + ".old"))
+                foreach (var file in Directory.GetFiles(PluginDir(), PluginAssetName + ".old"))
                     try { File.Delete(file); } catch { }
             } catch (Exception e) {
                 HostFixPlugin.Logger?.LogWarning($"[HostFix] Could not clean up old plugin files: {e.Message}");
@@ -203,7 +214,7 @@ namespace HostFixPlugin {
                 popup.TextAreaTMP.text = HFLocalization.Tr("hostfix.updater.popup_copying");
             }
 
-            var filePath = Path.Combine(Paths.PluginPath, asset.Name);
+            var filePath = Path.Combine(PluginDir(), asset.Name);
 
             // Move the working DLL aside before writing the download, so a write failure below can
             // roll back to it instead of leaving the plugin folder without a usable HostFix at all.

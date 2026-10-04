@@ -5,6 +5,7 @@
  "hostfix.modmanager.snitchfallback_label": "Snitch 대체",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>제작: <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.hud.assignment_failed": "HostFix: {0} 실패 (로그 참조). 직업이 이상해 보이면 라운드를 다시 시작하세요.",
  "hostfix.updater.popup_updating": "TOR - Hostfix 업데이트 중\n잠시 기다려 주세요...",
  "hostfix.updater.popup_downloading_progress": "TOR - Hostfix 업데이트 중\n잠시 기다려 주세요...\n다운로드 중...\n{0}",
  "hostfix.updater.popup_failed": "업데이트에 실패했습니다\n나중에 다시 시도하거나\n수동으로 업데이트하세요.",

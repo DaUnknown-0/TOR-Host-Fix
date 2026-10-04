@@ -5,6 +5,7 @@
  "hostfix.modmanager.snitchfallback_label": "Snitch-fallback",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>Moddad av <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.hud.assignment_failed": "HostFix: {0} misslyckades (se loggen). Om rollerna ser fel ut, starta om rundan.",
  "hostfix.updater.popup_updating": "Uppdaterar TOR - Hostfix\nVänta...",
  "hostfix.updater.popup_downloading_progress": "Uppdaterar TOR - Hostfix\nVänta...\nLaddar ner...\n{0}",
  "hostfix.updater.popup_failed": "Uppdateringen misslyckades\nFörsök igen senare,\neller uppdatera manuellt.",

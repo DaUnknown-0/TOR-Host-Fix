@@ -5,6 +5,7 @@
  "hostfix.modmanager.snitchfallback_label": "Cúltaca Snitch",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>Modáilte ag <color=#FCCE03FF>DaUnknown</color></size>",
+ "hostfix.hud.assignment_failed": "HostFix: theip ar {0} (féach an logchomhad). Má bhíonn cuma mhícheart ar na róil, atosaigh an chuairt.",
  "hostfix.updater.popup_updating": "Ag nuashonrú TOR - Hostfix\nFan le do thoil...",
  "hostfix.updater.popup_downloading_progress": "Ag nuashonrú TOR - Hostfix\nFan le do thoil...\nÁ íoslódáil...\n{0}",
  "hostfix.updater.popup_failed": "Níor éirigh leis an nuashonrú\nTriail arís níos déanaí,\nnó nuashonraigh de láimh.",
