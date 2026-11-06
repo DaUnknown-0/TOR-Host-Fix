@@ -1,8 +1,6 @@
 {
  "hostfix.config.pluginname": "TOR - Hostfix",
  "hostfix.config.enabled_desc": "Cumasaigh an mod seo",
- "hostfix.config.snitchfallback_desc": "Cumasaigh an cúltaca athchraolta seomra Snitch, atá ag obair ar an óstach amháin (Fix 4). Díchumasaigh chun nochtadh an Snitch a fhágáil go hiomlán ag deisiú thaobh an chliaint ó UsefulTORStuff.",
- "hostfix.modmanager.snitchfallback_label": "Cúltaca Snitch",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>Modáilte ag <color=#FCCE03FF>DaUnknown</color></size>",
  "hostfix.hud.assignment_failed": "HostFix: theip ar {0} (féach an logchomhad). Má bhíonn cuma mhícheart ar na róil, atosaigh an chuairt.",

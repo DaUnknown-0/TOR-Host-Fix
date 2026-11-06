@@ -1,8 +1,6 @@
 {
  "hostfix.config.pluginname": "TOR - Hostfix",
  "hostfix.config.enabled_desc": "Включить этот мод",
- "hostfix.config.snitchfallback_desc": "Включить резервную ретрансляцию комнаты Snitch, работающую только на хосте (Fix 4). Отключите, чтобы полностью оставить раскрытие Snitch на стороне клиента - на усмотрение исправления UsefulTORStuff.",
- "hostfix.modmanager.snitchfallback_label": "Резерв Snitch",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>Модификация: <color=#FCCE03FF>DaUnknown</color></size>",
  "hostfix.hud.assignment_failed": "HostFix: {0} не удалось (см. лог). Если роли выглядят неправильно, перезапусти раунд.",

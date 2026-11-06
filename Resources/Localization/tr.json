@@ -1,8 +1,6 @@
 {
  "hostfix.config.pluginname": "TOR - Hostfix",
  "hostfix.config.enabled_desc": "Bu modu etkinleştir",
- "hostfix.config.snitchfallback_desc": "Sadece host tarafındaki Snitch oda yeniden yayın yedeğini etkinleştir (Düzeltme 4). Snitch ifşasını tamamen UsefulTORStuff'ın istemci taraflı düzeltmesine bırakmak için devre dışı bırakın.",
- "hostfix.modmanager.snitchfallback_label": "Snitch Yedeği",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>Mod yapan: <color=#FCCE03FF>DaUnknown</color></size>",
  "hostfix.hud.assignment_failed": "HostFix: {0} başarısız oldu (günlüğe bak). Roller yanlış görünüyorsa raundu yeniden başlat.",

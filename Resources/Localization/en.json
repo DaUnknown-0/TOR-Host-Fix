@@ -1,8 +1,6 @@
 {
  "hostfix.config.pluginname": "TOR - Hostfix",
  "hostfix.config.enabled_desc": "Enable this mod",
- "hostfix.config.snitchfallback_desc": "Enable the host-only Snitch room re-broadcast fallback (Fix 4). Disable to leave the Snitch reveal entirely to UsefulTORStuff's client-side fix.",
- "hostfix.modmanager.snitchfallback_label": "Snitch Fallback",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>Modded by <color=#FCCE03FF>DaUnknown</color></size>",
  "hostfix.hud.assignment_failed": "HostFix: {0} failed (see log). If roles look wrong, restart the round.",

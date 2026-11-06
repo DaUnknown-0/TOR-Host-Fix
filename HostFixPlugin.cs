@@ -11,20 +11,13 @@
  *      coroutine (covers Guesser gamemode, Lawyer target, and modifiers).
  *   3. Safety net in HudManager.Update: resets a draft stuck with an empty pick order, and
  *      removes disconnected pickers from the pick order (re-sent to every client).
- *   4. Snitch reveal missing an evil HOST (TOR resets the room map mid-prefix,
- *      dropping the host's early ShareRoom; the host re-broadcasts its room on a
- *      short delay so it lands after the reset, inside the reveal window).
  *
  * Strategy: minimal, defensive patches. Don't replace TOR methods — just
  * guard them with try-catch and reset stuck state. This way, if TOR updates
  * its internals, the worst that happens is our patches become no-ops.
  *
- * Note: all fixes run host-only. Fix 4 works host-only because the re-broadcast is
- * a normal ShareRoom RPC that TOR's own handler processes on the Snitch's client.
- *
- * Coordination with UsefulTORStuff: If UsefulTORStuff's client-side Snitch fix is active
- * on all clients (checked via UsefulTORStuffPlugin.SnitchClientFixActive), Fix 4 stands
- * down — the client-side fix handles it on every client and makes the host fallback redundant.
+ * Note: all fixes run host-only. The former Fix 4 (Snitch host-room re-broadcast fallback and its
+ * Mod Manager toggle) was removed on 2026-11-06; the Snitch reveal is left to TOR and Forgotten Fixes.
  */
 
 global using Il2CppInterop.Runtime;
@@ -54,7 +47,7 @@ public class HostFixPlugin : BasePlugin
 {
     public const string PluginGuid = "com.trackerteam.hostfix";
     public const string PluginName = "TOR - Hostfix";
-    public const string PluginVersion = "1.0.29";
+    public const string PluginVersion = "1.0.30";
     public static readonly System.Version Version = System.Version.Parse(PluginVersion);
 
     public static ManualLogSource Logger { get; private set; }
@@ -62,14 +55,7 @@ public class HostFixPlugin : BasePlugin
     // Cached reflection handles — resolved once at startup
     internal static FieldInfo RoleDraftIsRunningField;
     internal static FieldInfo RoleDraftPickOrderField;
-    internal static FieldInfo SnitchSnitchField;
-    internal static FieldInfo UsefulStuffSnitchClientFixActiveField;
     internal static Assembly TORAssembly;
-    internal static Assembly UsefulStuffAssembly;
-
-    // Laufzeit-Schalter für den Snitch-Host-Fallback (Fix 4), umschaltbar im Mod-Manager.
-    // Wird live in SnitchHostRoomFix gelesen — kein Neustart nötig.
-    internal static ConfigEntry<bool> SnitchFallbackEnabled;
 
     public override void Load()
     {
@@ -78,12 +64,6 @@ public class HostFixPlugin : BasePlugin
 
         // Check if this mod is enabled.
         var enabled = Config.Bind("General", "Enabled", true, "Enable this mod");
-
-        // Snitch-Host-Fallback (Fix 4) separat umschaltbar. Greift sofort zur Laufzeit, daher kein
-        // Neustart nötig — der Mod-Manager rendert dafür einen Live-Toggle (ExtraToggle).
-        SnitchFallbackEnabled = Config.Bind("Snitch", "FallbackEnabled", true,
-            "Enable the host-only Snitch room re-broadcast fallback (Fix 4). Disable to leave the " +
-            "Snitch reveal entirely to UsefulTORStuff's client-side fix.");
 
         // Lokalisierung: lädt die hostfix.*-Tabellen und folgt der von UsefulTORStuff via
         // AppDomain publizierten Sprache (HFLocalization; Poll-Patches unten via PatchAll).
@@ -100,18 +80,9 @@ public class HostFixPlugin : BasePlugin
                 { "RepositoryName", "TOR-Host-Fix" },
                 { "ButtonColor", Color.cyan },
                 { "Enabled", enabled },
-                { "RuntimeEnabled", enabled.Value },
-                // Live-Toggle im Mod-Manager (wirkt sofort, kein Neustart).
-                { "ExtraToggle", SnitchFallbackEnabled },
-                { "ExtraToggleLabel", HFLocalization.Tr("hostfix.modmanager.snitchfallback_label") }
+                { "RuntimeEnabled", enabled.Value }
             };
             AppDomain.CurrentDomain.SetData($"ModManager.RegisteredMod.{PluginGuid}", modData);
-            // Sprachwechsel: das im Mod-Manager angezeigte Label in der registrierten Map live
-            // nachziehen (die Dictionary-Referenz ist prozessweit geteilt).
-            HFLocalization.LanguageApplied += () => {
-                try { modData["ExtraToggleLabel"] = HFLocalization.Tr("hostfix.modmanager.snitchfallback_label"); }
-                catch { }
-            };
             Logger.LogInfo($"Registered HostFixPlugin in Mod Manager registry (runtime={enabled.Value}).");
         } catch (System.Exception ex) {
             Logger.LogError($"Failed to register HostFixPlugin: {ex}");
@@ -144,17 +115,6 @@ public class HostFixPlugin : BasePlugin
         // --- Fix 3: Safety net via HudManager.Update (attribute-based for IL2CPP) ---
         // Applied automatically via [HarmonyPatch] attribute below
         harmony.PatchAll(typeof(HudManagerSafetyNet));
-
-        // --- Fix 4: Snitch reveal misses an evil host (host re-broadcasts its room after TOR's reset) ---
-        // Echte Absicherung: der Fallback wird IMMER gepatcht und orientiert sich zur Laufzeit nur daran,
-        // ob der Client-Fix aktiv ist und ob der Host gerade ein Meeting startet — NICHT am Snitch.snitch-
-        // Handle. Konnte Snitch.snitch nicht aufgelöst werden (genau der Fehlerfall), darf der Fallback
-        // trotzdem greifen, statt komplett auszufallen.
-        harmony.PatchAll(typeof(SnitchHostRoomFix));
-        if (SnitchSnitchField != null)
-            Logger.LogInfo("Patched StartMeeting — Snitch host-room fallback armed (gated on a Snitch in play).");
-        else
-            Logger.LogWarning("Patched StartMeeting — Snitch host-room fallback armed WITHOUT Snitch.snitch gate (handle unresolved).");
 
         // Version display in the top-corner PingTracker (host only).
         harmony.PatchAll(typeof(VersionDisplayPatch));
@@ -203,28 +163,6 @@ public class HostFixPlugin : BasePlugin
             {
                 Logger.LogError("RoleDraft.isRunning field not found.");
                 return false;
-            }
-
-            // Snitch.snitch is nested in the TheOtherRoles.TheOtherRoles class. Best-effort:
-            // a missing field only disables the Snitch host-room fix, not the whole plugin.
-            var snitchType = TORAssembly.GetType("TheOtherRoles.TheOtherRoles+Snitch");
-            SnitchSnitchField = snitchType?.GetField("snitch", BindingFlags.Public | BindingFlags.Static);
-            if (SnitchSnitchField == null)
-                Logger.LogWarning("Snitch.snitch field not found — Snitch host-room fix will be skipped.");
-
-            // Try to resolve UsefulTORStuff's SnitchClientFixActive flag (best-effort).
-            // If present and true, we can stand down our host-only re-broadcast fallback.
-            UsefulStuffAssembly = AppDomain.CurrentDomain.GetAssemblies()
-                .FirstOrDefault(a => a.GetName().Name == "UsefulTORStuff");
-            if (UsefulStuffAssembly != null)
-            {
-                var usefulPluginType = UsefulStuffAssembly.GetType("UsefulTORStuff.UsefulTORStuffPlugin");
-                UsefulStuffSnitchClientFixActiveField = usefulPluginType?.GetField(
-                    "SnitchClientFixActive", BindingFlags.Public | BindingFlags.Static);
-                if (UsefulStuffSnitchClientFixActiveField != null)
-                    Logger.LogInfo("UsefulTORStuff detected — will coordinate Snitch fix with client-side patches.");
-                else
-                    Logger.LogWarning("UsefulTORStuff found but SnitchClientFixActive field not resolved.");
             }
 
             Logger.LogInfo("TOR types resolved successfully.");
@@ -282,9 +220,6 @@ public class HostFixPlugin : BasePlugin
                 if (was)
                     Logger.LogWarning("[Fix1] isRunning was stuck — reset to false.");
 
-                // P0.4: Per-Runden-Reset auch für den Snitch-Re-Broadcast, damit kein
-                // eingeplantes ShareRoom-RPC in die nächste Runde durchsickert.
-                SnitchHostRoomFix.Reset();
             }
             catch (Exception ex)
             {
@@ -406,15 +341,8 @@ public class HostFixPlugin : BasePlugin
                     _stuckTimer = 0f;
                     _pollTimer = 0f;
                     _loggedReset = false;
-                    // P0.4: Spiel läuft nicht (mehr) — ein noch eingeplantes Re-Broadcast verwerfen,
-                    // damit es nicht ins nächste Spiel überspringt.
-                    SnitchHostRoomFix.Reset();
                     return;
                 }
-
-                // Fix 4's delayed Snitch re-broadcast. Runs regardless of the draft state below
-                // (the draft is idle during meetings), so flush it before the isRunning early-out.
-                SnitchHostRoomFix.Tick();
 
                 // AUDIT-2026-08-16: only actually poll the reflected TOR fields every PollInterval
                 // seconds instead of every frame - see field comment above.
@@ -564,131 +492,6 @@ public class HostFixPlugin : BasePlugin
             catch (Exception e)
             {
                 Logger.LogError($"[Fix3] pick order resend failed: {e}");
-            }
-        }
-    }
-
-    // ========================================================================
-    // Fix 4: Snitch reveal misses an evil HOST
-    //
-    // TOR's StartMeeting prefix has every client broadcast its room via the
-    // ShareRoom RPC, then resets Snitch.playerRoomMap at the END of that same
-    // prefix. The host initiates the meeting, so its ShareRoom (StartRpcImmediately)
-    // reaches the Snitch BEFORE the host's own (batched) RpcStartMeeting — i.e.
-    // before the Snitch's prefix runs the reset, which then wipes the host's entry.
-    // Non-host players send after receiving RpcStartMeeting, so their entries
-    // survive. The Chat-mode reveal skips anyone missing from playerRoomMap, so an
-    // evil host is systematically left out.
-    //
-    // Fix: the host re-broadcasts its room on a short delay. Host-only by design —
-    // TOR's own ShareRoom handler (present on every client via TOR) writes it into
-    // the Snitch's playerRoomMap, so the Snitch needs no extra plugin. The delay
-    // makes the re-send leave the host AFTER its batched RpcStartMeeting, so it lands
-    // in the Snitch's freshly-reset map and still arrives inside the ~0.4s reveal
-    // window. (Map mode uses live positions and is unaffected.) Gated only on a Snitch
-    // being in play, read via reflection.
-    //
-    // Coordination with UsefulTORStuff: If every client runs UsefulTORStuff with its
-    // client-side Snitch fix ready (checked via UsefulTORStuffPlugin.SnitchClientFixActive),
-    // this host-only fallback stands down — the client-side fix reimplements the Snitch
-    // reveal on every client, making the delayed re-broadcast redundant. When standing
-    // down, a log message confirms the client-side fix is active. If any client lacks the
-    // mod or the client-side fix isn't ready, the fallback runs as usual.
-    // ========================================================================
-
-    [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.StartMeeting))]
-    public static class SnitchHostRoomFix
-    {
-        // TOR's CustomRPC.ShareRoom value (enum is internal to TOR; stable in 4.8.0).
-        private const byte ShareRoomRpcId = 167;
-
-        // Delay before the host re-broadcasts. Must clear the host's batched RpcStartMeeting (a frame)
-        // yet stay inside the Snitch's ~0.4s reveal lerp. 0.15s leaves ~0.25s of window for jitter.
-        private const float RebroadcastDelay = 0.15f;
-
-        private static bool _pending;
-        private static float _sendAt;
-
-        // Verwirft ein eingeplantes Re-Broadcast (P0.4). Sonst überlebt ein _pending, das mangels
-        // GameState==Started nicht von Tick() konsumiert wurde (Spielende/Host-Leave innerhalb der
-        // 0.15s-Verzögerung), ins NÄCHSTE Spiel und feuert dort ein irrelevantes ShareRoom-RPC.
-        // Aufgerufen aus TORs Per-Runden-Reset (ResetVariablesPatch) und sobald die
-        // HudManagerSafetyNet GameState != Started sieht.
-        public static void Reset()
-        {
-            _pending = false;
-        }
-
-        [HarmonyPostfix]
-        public static void Postfix()
-        {
-            // Vom Nutzer im Mod-Manager abgeschaltet? Dann gar nicht erst einplanen.
-            if (SnitchFallbackEnabled != null && !SnitchFallbackEnabled.Value) return;
-
-            // The host always initiates the meeting, so only its room loses the race — schedule the
-            // delayed re-send on the host only.
-            if (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost) return;
-
-            // Soft-Optimierung, KEINE harte Sperre: nur überspringen, wenn wir sicher WISSEN, dass kein
-            // Snitch im Spiel ist (Handle aufgelöst UND Wert null). Konnte das Handle nicht aufgelöst
-            // werden, läuft der Fallback trotzdem — ein zusätzliches ShareRoom-RPC ohne Snitch ist harmlos
-            // (TOR's Handler schreibt nur in die ohnehin ungenutzte playerRoomMap).
-            if (SnitchSnitchField != null)
-            {
-                try
-                {
-                    if (SnitchSnitchField.GetValue(null) == null) return;
-                }
-                catch { /* Handle defekt — sicherheitshalber weitermachen */ }
-            }
-
-            // If UsefulTORStuff's client-side Snitch fix is active on all clients, stand down — it
-            // reimplements the Snitch reveal on every client and makes our host-only fallback redundant.
-            if (UsefulStuffSnitchClientFixActiveField != null)
-            {
-                try
-                {
-                    bool clientFixActive = Convert.ToBoolean(UsefulStuffSnitchClientFixActiveField.GetValue(null));
-                    if (clientFixActive)
-                    {
-                        Logger.LogInfo("[Fix4] UsefulTORStuff client-side Snitch fix active on all clients — standing down host re-broadcast.");
-                        return;
-                    }
-                }
-                catch
-                {
-                    // If reflection fails, proceed with the fallback (better safe than sorry)
-                }
-            }
-
-            _pending = true;
-            _sendAt = Time.realtimeSinceStartup + RebroadcastDelay;
-        }
-
-        // Flushed once per frame from HudManagerSafetyNet (a host-only HudManager.Update postfix).
-        public static void Tick()
-        {
-            if (!_pending || Time.realtimeSinceStartup < _sendAt) return;
-            _pending = false;
-            // Mid-pending im Mod-Manager abgeschaltet? Dann nicht mehr senden.
-            if (SnitchFallbackEnabled != null && !SnitchFallbackEnabled.Value) return;
-            try
-            {
-                var hud = HudManager.Instance;
-                var roomTracker = hud != null ? hud.roomTracker : null;
-                byte roomId = roomTracker != null && roomTracker.LastRoom != null
-                    ? (byte)roomTracker.LastRoom.RoomId : byte.MinValue;
-
-                MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(
-                    PlayerControl.LocalPlayer.NetId, ShareRoomRpcId, SendOption.Reliable, -1);
-                writer.Write(PlayerControl.LocalPlayer.PlayerId);
-                writer.Write(roomId);
-                AmongUsClient.Instance.FinishRpcImmediately(writer);
-                Logger.LogInfo($"[Fix4] Re-broadcast host room {roomId} for player {PlayerControl.LocalPlayer.PlayerId}.");
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"[Fix4] Snitch host-room re-send failed: {ex.Message}");
             }
         }
     }

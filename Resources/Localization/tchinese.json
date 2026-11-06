@@ -1,8 +1,6 @@
 {
  "hostfix.config.pluginname": "TOR - Hostfix",
  "hostfix.config.enabled_desc": "啟用此Mod",
- "hostfix.config.snitchfallback_desc": "啟用僅限房主的Snitch房間重新廣播備援方案(修正4)。停用後，Snitch身分揭露將完全交由UsefulTORStuff的客戶端修正處理。",
- "hostfix.modmanager.snitchfallback_label": "Snitch備援方案",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>製作: <color=#FCCE03FF>DaUnknown</color></size>",
  "hostfix.hud.assignment_failed": "HostFix：{0} 失敗（見記錄檔）。如果角色看起來不對，請重新開始本回合。",

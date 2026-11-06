@@ -1,8 +1,6 @@
 {
  "hostfix.config.pluginname": "TOR - Hostfix",
  "hostfix.config.enabled_desc": "Attiva questa mod",
- "hostfix.config.snitchfallback_desc": "Attiva il fallback di re-invio della stanza dello Snitch lato host (Fix 4). Disattivalo per lasciare la rivelazione dello Snitch interamente al fix lato client di UsefulTORStuff.",
- "hostfix.modmanager.snitchfallback_label": "Fallback Snitch",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>Moddato da <color=#FCCE03FF>DaUnknown</color></size>",
  "hostfix.hud.assignment_failed": "HostFix: {0} non è riuscito (vedi il log). Se i ruoli sembrano sbagliati, riavvia il round.",

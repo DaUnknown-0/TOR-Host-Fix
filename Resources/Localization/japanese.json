@@ -1,8 +1,6 @@
 {
  "hostfix.config.pluginname": "TOR - Hostfix",
  "hostfix.config.enabled_desc": "このModを有効にする",
- "hostfix.config.snitchfallback_desc": "ホスト限定のSnitchルーム再送信フォールバック(修正4)を有効にします。無効にすると、Snitchの正体表示はUsefulTORStuffのクライアント側修正に完全に委ねられます。",
- "hostfix.modmanager.snitchfallback_label": "Snitchフォールバック",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>Mod制作: <color=#FCCE03FF>DaUnknown</color></size>",
  "hostfix.hud.assignment_failed": "HostFix：{0} が失敗しました (ログを参照)。役職がおかしい場合はラウンドを再開してください。",

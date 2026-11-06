@@ -1,8 +1,6 @@
 {
  "hostfix.config.pluginname": "TOR - Hostfix",
  "hostfix.config.enabled_desc": "Bật mod này",
- "hostfix.config.snitchfallback_desc": "Bật tính năng dự phòng chỉ dành cho Chủ Phòng để phát lại thông tin phòng của Snitch (Fix 4). Tắt để để việc tiết lộ Snitch hoàn toàn phụ thuộc vào bản vá phía client của UsefulTORStuff.",
- "hostfix.modmanager.snitchfallback_label": "Dự Phòng Snitch",
  "hostfix.hud.credit_line": "<link=\"hostFixCredits\"><color=#1FA8FF>Hostfix</color> v{0}</link>",
  "hostfix.hud.modded_by_credit": "\n<size=70%>Mod bởi <color=#FCCE03FF>DaUnknown</color></size>",
  "hostfix.hud.assignment_failed": "HostFix: {0} thất bại (xem nhật ký). Nếu vai trò trông sai, hãy khởi động lại vòng chơi.",
