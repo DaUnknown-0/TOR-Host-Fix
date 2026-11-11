@@ -1,15 +1,39 @@
-# TOR - Hostfix
+# TOR - Host Tools
 
-An external fix plugin for [The Other Roles](https://github.com/TheOtherRolesAU/TheOtherRoles) (TOR) 4.8.0 that patches several host-side bugs **without modifying TOR's source**. It resolves TOR types via reflection, so it stays a no-op if TOR's internals change rather than crashing.
+A host-only plugin (formerly **TOR - Hostfix**) for [The Other Roles](https://github.com/TheOtherRolesAU/TheOtherRoles) (TOR) 4.8.0 that patches several host-side bugs **without modifying TOR's source**. It resolves TOR types via reflection, so it stays a no-op if TOR's internals change rather than crashing.
 
 This mod is not affiliated with Among Us or Innersloth LLC, and the content contained therein is not endorsed or otherwise sponsored by Innersloth LLC. Portions of the materials contained herein are property of Innersloth LLC. © Innersloth LLC.
 
 ## Features
 
-1. **Host cooldown freeze** — resets `RoleDraft.isRunning` when it gets stuck at `true`, which otherwise freezes all kill cooldowns across rounds.
-2. **Host-only assignment crashes** — wraps the draft coroutine's host-only role/modifier/target assignment calls (Guesser gamemode, Lawyer target, modifiers) in a finalizer so a single exception can't kill the coroutine and leave the draft stuck.
-- **Auto-update** — checks this repo's GitHub releases on the main menu and offers an in-game update button.
-- **Version display** — shows `Hostfix vX.Y.Z` in the top-corner version readout, **for the host only** (this plugin only matters on the host's machine).
+Only the host needs this mod. The plugin GUID, the DLL name (`HostFixPlugin.dll`) and this repository keep their old names, so existing installs update in place.
+
+### Fixes (need only The Other Roles)
+
+1. **Host cooldown freeze**: resets `RoleDraft.isRunning` when it gets stuck at `true`, which otherwise freezes all kill cooldowns across rounds.
+2. **Host-only assignment crashes**: wraps the draft coroutine's host-only role/modifier/target assignment calls (Guesser gamemode, Lawyer target, modifiers) in a finalizer so a single exception can't kill the coroutine and leave the draft stuck.
+3. **Draft safety net**: resets a draft stuck with an empty pick order and removes disconnected pickers from it.
+
+### Tools (need [TOR - Forgotten Fixes](https://github.com/DaUnknown-0/Useful-TOR-stuff) as well)
+
+The tools draw their panels with the UI building blocks of TOR - Forgotten Fixes. Without that mod (or with an older version of it) only the fixes run.
+
+- **Settings presets**: every mod option and the Among Us settings under one name, as many as you like; each preset can carry a range of lobby sizes and is suggested when the lobby fits. Moved here from Forgotten Fixes.
+- **Settings export and import**: completes TOR's copy/paste string with a file export and an import picker. Moved here from Forgotten Fixes.
+- **Web settings page**: a local page on `127.0.0.1` for editing every lobby setting in the browser. Moved here from Forgotten Fixes.
+- **Lobby size above 15**: the option "Maximum Lobby Size (/size)" lets `/size` go up to 25 (experimental). Moved here from Forgotten Fixes.
+- **Connections**: a traffic light per player from timed round trips and the drops of the evening.
+- **Start check**: one list of everything that stands in the way of a start.
+- **Settings log**: what changed since the last round, and the last ten rounds to go back to.
+- **Evening plan**: an order of presets with a number of rounds each; the next one is suggested after its rounds, nothing loads by itself.
+- **Player notes**: private notes on players, shown to the host when the player joins.
+- **Settings rescue**: when you are host again and the settings differ from those you last hosted with, yours are offered.
+- **Lobby guard**: your own block list, and a hint when somebody sits in the lobby without Forgotten Fixes.
+
+### Also
+
+- **Auto-update**: checks this repo's GitHub releases on the main menu and offers an in-game update button.
+- **Version display**: shows `Host Tools vX.Y.Z` in the top-corner version readout, **for the host only**.
 
 ## Download & Install
 

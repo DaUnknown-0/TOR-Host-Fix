@@ -2,7 +2,7 @@
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
         <Version>1.0.30</Version>
-        <Description>TOR - Hostfix - Fixes host cooldown freeze and missing Guesser assignment in TOR 4.8.0</Description>
+        <Description>TOR - Host Tools - host-only fixes and tools for The Other Roles: draft safety nets, settings presets, web settings page, connection lights</Description>
         <Authors>TrackerTeam</Authors>
         <LangVersion>latest</LangVersion>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -16,12 +16,33 @@
          Explicit LogicalName so the lookup never depends on the root-namespace default. -->
     <ItemGroup>
         <EmbeddedResource Include="Resources\Localization\*.json" LogicalName="HostFixPlugin.Resources.Localization.%(Filename)%(Extension)" />
+        <EmbeddedResource Include="Resources\webconfig.html" LogicalName="HostFixPlugin.Resources.webconfig.html" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="AmongUs.GameLibs.Steam" Version="2024.10.29" />
         <PackageReference Include="BepInEx.IL2CPP.MSBuild" Version="2.1.0-rc.1" />
         <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.697" />
+    </ItemGroup>
+
+    <!-- DLL locations: default to the local builds, overridable in CI via -p:TheOtherRolesDll=... / -p:UsefulTORStuffDll=... -->
+    <PropertyGroup>
+        <TheOtherRolesDll Condition="'$(TheOtherRolesDll)' == ''">..\TheOtherRoles-main\TheOtherRoles-main\TheOtherRoles\bin\Debug\net6.0\TheOtherRoles.dll</TheOtherRolesDll>
+        <UsefulTORStuffDll Condition="'$(UsefulTORStuffDll)' == ''">..\UsefulTORStuff\bin\Debug\net6.0\UsefulTORStuff.dll</UsefulTORStuffDll>
+    </PropertyGroup>
+
+    <!-- TOR is the hard dependency it always was (now also at compile time: the host tools use CustomOption).
+         TOR - Forgotten Fixes is a SOFT dependency: its UI building blocks draw the host panels. Everything that
+         touches its types sits behind HostTools.Boot and only runs when that mod is loaded. -->
+    <ItemGroup>
+        <Reference Include="TheOtherRoles">
+            <HintPath>$(TheOtherRolesDll)</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="UsefulTORStuff">
+            <HintPath>$(UsefulTORStuffDll)</HintPath>
+            <Private>false</Private>
+        </Reference>
     </ItemGroup>
 
     <Target Name="CopyCustomContent" AfterTargets="AfterBuild" Condition="Exists('$(AmongUsLatest)/BepInEx/plugins/')">

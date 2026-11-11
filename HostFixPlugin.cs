@@ -43,10 +43,13 @@ namespace HostFixPlugin;
 [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
 [BepInProcess("Among Us.exe")]
 [BepInDependency("me.eisbison.theotherroles", BepInDependency.DependencyFlags.HardDependency)]
+[BepInDependency("com.tormod.usefultorstuff", BepInDependency.DependencyFlags.SoftDependency)]
 public class HostFixPlugin : BasePlugin
 {
     public const string PluginGuid = "com.trackerteam.hostfix";
-    public const string PluginName = "TOR - Hostfix";
+    // The public name since 2026-11-11 (before: "TOR - Hostfix"). Guid, DLL name and repository stay: the updater,
+    // the mod sync, the Mod Manager and every existing config hang on them.
+    public const string PluginName = "TOR - Host Tools";
     public const string PluginVersion = "1.0.30";
     public static readonly System.Version Version = System.Version.Parse(PluginVersion);
 
@@ -126,6 +129,9 @@ public class HostFixPlugin : BasePlugin
 
         // Self-updater: checks GitHub releases and offers an in-game update button.
         AddComponent<HostFixUpdater>();
+
+        // The tools (presets, web settings page, panels): only with TOR - Forgotten Fixes loaded, see HostTools.
+        HostTools.TryBoot(this, harmony);
 
         Logger.LogInfo($"{PluginName} v{PluginVersion} loaded — all patches applied.");
     }

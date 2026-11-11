@@ -1,6 +1,20 @@
-# Changelog — TOR - Hostfix
+# Changelog: TOR - Host Tools (formerly TOR - Hostfix)
 
 ## Unreleased
+
+### Host Tools (2026-11-11)
+- **New public name "TOR - Host Tools".** GUID (`com.trackerteam.hostfix`), DLL name and repository are unchanged.
+- **Soft dependency on TOR - Forgotten Fixes** (`HostTools.cs`): the fixes keep running with The Other Roles alone,
+  the tools start only when Forgotten Fixes is loaded and new enough (public UI building blocks).
+- **Moved here from Forgotten Fixes**: settings presets (`SettingsPresets.cs`, `SettingsPresetsUI.cs`, now with a
+  range of lobby sizes per preset and a suggestion in the lobby), settings export and import (`SettingsShare.cs`),
+  the web settings page (`WebConfig.cs`, config section `[WebConfig]` is now in this mod's config file) and the
+  panel of the connection traffic light (`ConnectionLightUI.cs`). Also the lobby size above 15 (`LobbySizeLimit.cs`,
+  option 1378, `/size`): it only ever ran on the host. Forgotten Fixes reads the raised limit through the AppDomain
+  key `HostTools.LobbySize.Max`.
+- **New** (`HostToolsLogic.cs`, `HostToolsUI.cs`): start check, settings log, evening plan, player notes, settings
+  rescue, lobby guard. Files live in `BepInEx/config/HostTools`.
+- **Build**: the project now references TheOtherRoles.dll and UsefulTORStuff.dll; the release workflow downloads both.
 
 ### Bug-Audit 2026-09-03
 - **Draft-Picker-Entfernung** (`HostFixPlugin.cs`, Fix 3 `RemoveDisconnectedPicker`): disconnectete

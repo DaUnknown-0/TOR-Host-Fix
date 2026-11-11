@@ -115,6 +115,7 @@ namespace HostFixPlugin {
 
             // First the Atom feed: not counted against the API's 60 requests per hour (ReleaseFeed).
             var feed = new UnityWebRequest();
+            feed.timeout = UnknownsNet.RequestTimeout;   // a hanging request must not keep the updater busy for the session
             feed.SetMethod(UnityWebRequest.UnityWebRequestMethod.Get);
             feed.SetUrl(ReleaseFeed.Url(RepositoryOwner, RepositoryName));
             feed.SetRequestHeader("User-Agent", $"HostFixPlugin/{HostFixPlugin.PluginVersion}");
@@ -152,6 +153,7 @@ namespace HostFixPlugin {
             }
 
             var www = new UnityWebRequest();
+            www.timeout = UnknownsNet.RequestTimeout;   // a hanging request must not keep the updater busy for the session
             www.SetMethod(UnityWebRequest.UnityWebRequestMethod.Get);
             www.SetUrl($"https://api.github.com/repos/{RepositoryOwner}/{RepositoryName}/releases");
             // GitHub weist UA-lose Clients ab (P2.8) — eindeutigen User-Agent setzen.
@@ -199,16 +201,22 @@ namespace HostFixPlugin {
             // Fortschritt/Status selbst über GetUpdateState()/GetUpdateProgress() an.
             GenericPopup popup = null;
             GameObject button = null;
+            // TwitchManager.Instance oder sein TwitchPopup kann null sein (Hauptmenue noch nicht fertig):
+            // dann ohne Popup weiterarbeiten wie im Manager-Modus, statt mit einer NRE aus der Coroutine
+            // zu fallen und _busy/_updateState fuer die ganze Sitzung haengen zu lassen.
             if (!managerMode) {
-                popup = Instantiate(TwitchManager.Instance.TwitchPopup);
-                popup.TextAreaTMP.fontSize *= 0.7f;
-                popup.TextAreaTMP.enableAutoSizing = false;
+                var popupTemplate = TwitchManager.Instance != null ? TwitchManager.Instance.TwitchPopup : null;
+                if (popupTemplate != null) {
+                    popup = Instantiate(popupTemplate);
+                    popup.TextAreaTMP.fontSize *= 0.7f;
+                    popup.TextAreaTMP.enableAutoSizing = false;
 
-                popup.Show();
+                    popup.Show();
 
-                button = popup.transform.GetChild(2).gameObject;
-                button.SetActive(false);
-                popup.TextAreaTMP.text = HFLocalization.Tr("hostfix.updater.popup_updating");
+                    button = popup.transform.GetChild(2).gameObject;
+                    button.SetActive(false);
+                    popup.TextAreaTMP.text = HFLocalization.Tr("hostfix.updater.popup_updating");
+                }
             }
 
             var asset = release.Assets.Find(FilterPluginAsset);
@@ -217,14 +225,15 @@ namespace HostFixPlugin {
                 // (z. B. Namensaenderung). asset.DownloadUrl darunter waere ein NullReferenceException.
                 HostFixPlugin.Logger?.LogError("[HostFix] Update failed: release asset not found.");
                 _updateState = 3;
-                if (!managerMode) {
+                if (!managerMode && popup != null) {
                     popup.TextAreaTMP.text = HFLocalization.Tr("hostfix.updater.popup_failed");
-                    button.SetActive(true);
+                    if (button != null) button.SetActive(true);
                 }
                 _busy = false;
                 yield break;
             }
             var www = new UnityWebRequest();
+            www.timeout = UnknownsNet.DownloadTimeout;   // a hanging request must not keep the updater busy for the session
             www.SetMethod(UnityWebRequest.UnityWebRequestMethod.Get);
             www.SetUrl(asset.DownloadUrl);
             www.downloadHandler = new DownloadHandlerBuffer();
@@ -232,7 +241,7 @@ namespace HostFixPlugin {
 
             while (!operation.isDone) {
                 _updateProgress = www.downloadProgress;
-                if (!managerMode) {
+                if (!managerMode && popup != null) {
                     int stars = Mathf.CeilToInt(www.downloadProgress * 10);
                     string progress = HFLocalization.Tr("hostfix.updater.popup_downloading_progress", new String((char)0x25A0, stars) + new String((char)0x25A1, 10 - stars));
                     popup.TextAreaTMP.text = progress;
@@ -240,16 +249,17 @@ namespace HostFixPlugin {
                 yield return new WaitForEndOfFrame();
             }
 
-            if (www.isNetworkError || www.isHttpError) {
+            // Only a PE image may replace the plugin: an error page that came back as HTTP 200 is a failed download.
+            if (www.isNetworkError || www.isHttpError || !UnknownsNet.IsPluginImage(www.downloadHandler.data)) {
                 _updateState = 3;
-                if (!managerMode) {
+                if (!managerMode && popup != null) {
                     popup.TextAreaTMP.text = HFLocalization.Tr("hostfix.updater.popup_failed");
-                    button.SetActive(true);
+                    if (button != null) button.SetActive(true);
                 }
                 _busy = false;
                 yield break;
             }
-            if (!managerMode) {
+            if (!managerMode && popup != null) {
                 popup.TextAreaTMP.text = HFLocalization.Tr("hostfix.updater.popup_copying");
             }
 
@@ -267,17 +277,26 @@ namespace HostFixPlugin {
             } catch (Exception e) {
                 HostFixPlugin.Logger?.LogError($"[HostFix] Update failed: could not move the old plugin file aside ({e.Message}).");
                 _updateState = 3;
-                if (!managerMode) {
+                if (!managerMode && popup != null) {
                     popup.TextAreaTMP.text = HFLocalization.Tr("hostfix.updater.popup_failed");
-                    button.SetActive(true);
+                    if (button != null) button.SetActive(true);
                 }
                 _busy = false;
                 yield break;
             }
 
-            var persistTask = File.WriteAllBytesAsync(filePath, www.downloadHandler.data);
+            // Abgesichert wie das Beiseiteschieben oben: gesperrte Zieldatei, volle Platte oder fehlende
+            // Rechte duerfen nicht direkt aus der Coroutine werfen und _busy haengen lassen.
+            System.Threading.Tasks.Task persistTask = null;
             var hasError = false;
-            while (!persistTask.IsCompleted) {
+            try {
+                persistTask = File.WriteAllBytesAsync(filePath, www.downloadHandler.data);
+            } catch (Exception e) {
+                HostFixPlugin.Logger?.LogError($"[HostFix] Update failed: could not write the downloaded file ({e.Message}).");
+                hasError = true;
+                persistTask = null;
+            }
+            while (persistTask != null && !persistTask.IsCompleted) {
                 if (persistTask.Exception != null) {
                     hasError = true;
                     break;
@@ -289,14 +308,14 @@ namespace HostFixPlugin {
             // already failed by the very first check never enters the loop above and hasError stays
             // false. Re-check after the loop so a write failure is never reported as a successful
             // update. IsCompletedSuccessfully covers Faulted AND Canceled in one check.
-            if (!hasError && !persistTask.IsCompletedSuccessfully) hasError = true;
+            if (!hasError && persistTask != null && !persistTask.IsCompletedSuccessfully) hasError = true;
 
             www.downloadHandler.Dispose();
             www.Dispose();
 
             if (!hasError) {
                 _updateState = 2;
-                if (!managerMode) {
+                if (!managerMode && popup != null) {
                     popup.TextAreaTMP.text = HFLocalization.Tr("hostfix.updater.popup_success");
                 }
             } else {
@@ -322,11 +341,11 @@ namespace HostFixPlugin {
                         + $"named \"{PluginAssetName}.old\".");
                 }
                 _updateState = 3;
-                if (!managerMode) {
+                if (!managerMode && popup != null) {
                     popup.TextAreaTMP.text = HFLocalization.Tr("hostfix.updater.popup_failed");
                 }
             }
-            if (!managerMode) button.SetActive(true);
+            if (!managerMode && button != null) button.SetActive(true);
             _busy = false;
         }
 
@@ -385,7 +404,7 @@ namespace HostFixPlugin {
         }
 
         [HideFromIl2Cpp]
-        public IEnumerator CoShowAnnouncement(string announcement, bool show = true, string shortTitle = "TOR - Hostfix Update", string title = "", string date = "") {
+        public IEnumerator CoShowAnnouncement(string announcement, bool show = true, string shortTitle = "TOR - Host Tools Update", string title = "", string date = "") {
             // Stagger behind other mods so Chance Modifier's popup appears first.
             yield return new WaitForSeconds(1.5f);
             // Wait until no announcement popup is currently visible (up to 30 s).

@@ -10,6 +10,9 @@ on:
 permissions:
   contents: write
 
+env:
+  TOR_VERSION: '4.8.0'
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -40,8 +43,28 @@ jobs:
           sed -i -E "s|(<Version>)[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?(</Version>)|\1${VERSION}\3|" HostFixPlugin.csproj
           echo "Gesetzt auf:"; grep PluginVersion HostFixPlugin.cs
 
+      - name: TheOtherRoles.dll laden (Build-Referenz)
+        run: |
+          DEST="$RUNNER_TEMP/TheOtherRoles.dll"
+          URL="https://github.com/TheOtherRolesAU/TheOtherRoles/releases/download/v${TOR_VERSION}/TheOtherRoles.dll"
+          echo "Lade $URL"
+          curl -fL --retry 3 -o "$DEST" "$URL"
+          echo "TOR_DLL=$DEST" >> "$GITHUB_ENV"
+
+      # Host Tools zeichnet seine Panels mit den Bausteinen von TOR - Forgotten Fixes. Genommen wird das neueste
+      # Release dort, Testversionen eingeschlossen: Forgotten Fixes muss also VOR Host Tools veroeffentlicht sein,
+      # wenn sich an den Bausteinen etwas geaendert hat.
+      - name: UsefulTORStuff.dll laden (Build-Referenz)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="$(gh release list -R DaUnknown-0/Useful-TOR-stuff --limit 1 --json tagName -q '.[0].tagName')"
+          echo "Forgotten Fixes $TAG"
+          gh release download "$TAG" -R DaUnknown-0/Useful-TOR-stuff -p UsefulTORStuff.dll -D "$RUNNER_TEMP" --clobber
+          echo "UTS_DLL=$RUNNER_TEMP/UsefulTORStuff.dll" >> "$GITHUB_ENV"
+
       - name: Build
-        run: dotnet build -c Release
+        run: dotnet build -c Release -p:TheOtherRolesDll="$TOR_DLL" -p:UsefulTORStuffDll="$UTS_DLL"
 
       - name: Release erstellen + DLL anhaengen
         env:
