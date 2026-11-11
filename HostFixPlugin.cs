@@ -11,13 +11,14 @@
  *      coroutine (covers Guesser gamemode, Lawyer target, and modifiers).
  *   3. Safety net in HudManager.Update: resets a draft stuck with an empty pick order, and
  *      removes disconnected pickers from the pick order (re-sent to every client).
+ *   4. Snitch: an evil host was missing from the Snitch's meeting list. The host re-sends its room
+ *      after the meeting RPC is out (SnitchHostRoom.cs, config "Fixes / SnitchHostRoom").
  *
  * Strategy: minimal, defensive patches. Don't replace TOR methods — just
  * guard them with try-catch and reset stuck state. This way, if TOR updates
  * its internals, the worst that happens is our patches become no-ops.
  *
- * Note: all fixes run host-only. The former Fix 4 (Snitch host-room re-broadcast fallback and its
- * Mod Manager toggle) was removed on 2026-11-06; the Snitch reveal is left to TOR and Forgotten Fixes.
+ * Note: all fixes run host-only; clients need nothing but TOR.
  */
 
 global using Il2CppInterop.Runtime;
@@ -118,6 +119,9 @@ public class HostFixPlugin : BasePlugin
         // --- Fix 3: Safety net via HudManager.Update (attribute-based for IL2CPP) ---
         // Applied automatically via [HarmonyPatch] attribute below
         harmony.PatchAll(typeof(HudManagerSafetyNet));
+
+        // --- Fix 4: Snitch list misses an evil host (host re-sends its room after the meeting RPC) ---
+        SnitchHostRoom.Init(Config, harmony);
 
         // Version display in the top-corner PingTracker (host only).
         harmony.PatchAll(typeof(VersionDisplayPatch));

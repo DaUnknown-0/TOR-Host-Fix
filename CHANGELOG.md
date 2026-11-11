@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Snitch: evil host missing from the meeting list (2026-11-11)
+- **Fix 4 is back, rebuilt and tested with two clients** (`SnitchHostRoom.cs`, config `[Fixes] SnitchHostRoom`,
+  default on). Cause in TOR 4.8.0: every client sends its room (`ShareRoom`) at the start of `StartMeeting` and
+  clears `Snitch.playerRoomMap` at the end of the same prefix; the Snitch reads the map 0.4 s later. Vanilla runs
+  `StartMeeting` on the host first and only then sends the meeting RPC, so the host's room reaches every client
+  before their own reset and is wiped. The host now sends its room again on the next frame and 0.15 s later, both
+  after the meeting RPC. Host only, clients need nothing but TOR.
+- Test (two local clients, host with Host Tools, client with TOR only, four meetings each): without the fix the
+  Snitch list stayed empty in all three rounds with an evil host; with the fix the host is listed in all three.
+  The control round (evil client, host as Snitch) listed the client both times.
+
 ### Host Tools (2026-11-11)
 - **New public name "TOR - Host Tools".** GUID (`com.trackerteam.hostfix`), DLL name and repository are unchanged.
 - **Soft dependency on TOR - Forgotten Fixes** (`HostTools.cs`): the fixes keep running with The Other Roles alone,
