@@ -13,6 +13,9 @@
  *      removes disconnected pickers from the pick order (re-sent to every client).
  *   4. Snitch: an evil host was missing from the Snitch's meeting list. The host re-sends its room
  *      after the meeting RPC is out (SnitchHostRoom.cs, config "Fixes / SnitchHostRoom").
+ *   5. Vampire bite blocked by the Time Master's shield: the bite stayed and killed the Time Master at
+ *      the next meeting. The host clears it with TOR's own reset RPC (VampireTimeMasterBite.cs,
+ *      config "Fixes / VampireTimeMasterBite").
  *
  * Strategy: minimal, defensive patches. Don't replace TOR methods — just
  * guard them with try-catch and reset stuck state. This way, if TOR updates
@@ -51,7 +54,7 @@ public class HostFixPlugin : BasePlugin
     // The public name since 2026-11-11 (before: "TOR - Hostfix"). Guid, DLL name and repository stay: the updater,
     // the mod sync, the Mod Manager and every existing config hang on them.
     public const string PluginName = "TOR - Host Tools";
-    public const string PluginVersion = "1.1.0";
+    public const string PluginVersion = "1.1.1";
     public static readonly System.Version Version = System.Version.Parse(PluginVersion);
 
     public static ManualLogSource Logger { get; private set; }
@@ -122,6 +125,9 @@ public class HostFixPlugin : BasePlugin
 
         // --- Fix 4: Snitch list misses an evil host (host re-sends its room after the meeting RPC) ---
         SnitchHostRoom.Init(Config, harmony);
+
+        // --- Fix 5: Vampire bite blocked by the Time Master's shield is cleared (no death at the next meeting) ---
+        VampireTimeMasterBite.Init(Config, harmony);
 
         // Version display in the top-corner PingTracker (host only).
         harmony.PatchAll(typeof(VersionDisplayPatch));

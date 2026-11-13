@@ -14,6 +14,7 @@ Only the host needs this mod. The plugin GUID, the DLL name (`HostFixPlugin.dll`
 2. **Host-only assignment crashes**: wraps the draft coroutine's host-only role/modifier/target assignment calls (Guesser gamemode, Lawyer target, modifiers) in a finalizer so a single exception can't kill the coroutine and leave the draft stuck.
 3. **Draft safety net**: resets a draft stuck with an empty pick order and removes disconnected pickers from it.
 4. **Snitch and an evil host**: an evil host was missing from the Snitch's meeting list, because the host's room reached every client before TOR cleared its room list. The host now sends its room again right after the meeting starts (config `[Fixes] SnitchHostRoom`, on by default).
+5. **Vampire bite on a shielded Time Master**: when the Time Master switched the time shield on after being bitten, the shield blocked the bite but TOR kept it pending, and the Time Master died at the next meeting. The host now clears the bite as soon as the shield blocks it (config `[Fixes] VampireTimeMasterBite`, on by default).
 
 ### Tools (need only The Other Roles)
 
