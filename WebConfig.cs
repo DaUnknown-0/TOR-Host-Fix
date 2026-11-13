@@ -44,7 +44,6 @@ using HarmonyLib;
 using TheOtherRoles;
 using UnityEngine;
 
-using UsefulTORStuff;
 
 namespace HostFixPlugin {
     public static class WebConfig {

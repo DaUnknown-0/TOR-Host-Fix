@@ -24,7 +24,6 @@ using System.Linq;
 using HarmonyLib;
 using UnityEngine;
 
-using UsefulTORStuff;
 
 namespace HostFixPlugin {
 
@@ -86,8 +85,8 @@ namespace HostFixPlugin {
 
         [HideFromIl2Cpp]
         public void Open() {
-            NewcomerShieldUI.Instance?.Close();
-            EarlyDeathShieldUI.Instance?.Close();
+            Uts.ClosePanel("NewcomerShieldUI");      // Forgotten Fixes' shield panels, when it is installed
+            Uts.ClosePanel("EarlyDeathShieldUI");
             buffer = ""; renaming = null; confirmKey = null; page = 0;
             Reload();
             Build();

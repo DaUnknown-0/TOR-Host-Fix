@@ -44,7 +44,6 @@ using System.Text.RegularExpressions;
 using TheOtherRoles;
 using UnityEngine;
 
-using UsefulTORStuff;
 
 namespace HostFixPlugin {
 

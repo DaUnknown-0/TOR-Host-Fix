@@ -51,7 +51,7 @@ public class HostFixPlugin : BasePlugin
     // The public name since 2026-11-11 (before: "TOR - Hostfix"). Guid, DLL name and repository stay: the updater,
     // the mod sync, the Mod Manager and every existing config hang on them.
     public const string PluginName = "TOR - Host Tools";
-    public const string PluginVersion = "1.0.30";
+    public const string PluginVersion = "1.0.30.1";
     public static readonly System.Version Version = System.Version.Parse(PluginVersion);
 
     public static ManualLogSource Logger { get; private set; }
@@ -522,12 +522,12 @@ public class HostFixPlugin : BasePlugin
         [HarmonyPriority(Priority.Low)]  // run after TOR's own PingTracker postfix
         public static void Postfix(PingTracker __instance)
         {
-            if (__instance == null || __instance.text == null) return;
+            if (ReferenceEquals(__instance, null) || ReferenceEquals(__instance.text, null) || __instance.text.m_CachedPtr == System.IntPtr.Zero) return;   // no Unity ==: it boxes a bool per call (il2cpp heap), every frame in every mod
             // Host-only: this plugin only needs to run on the host, so the version line is just
             // for the host to confirm it's loaded — keep this guard, it predates the collective.
             // Not (or no longer) host: take the line out of the shared block as well, it stayed there
             // after joining someone else's lobby (audit 2026-10-04).
-            if (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost) { UnknownsCollective.Withdraw(PluginGuid); return; }
+            if (ReferenceEquals(AmongUsClient.Instance, null) || !AmongUsClient.Instance.AmHost) { UnknownsCollective.Withdraw(PluginGuid); return; }
 
             string text = __instance.text.text;
             if (string.IsNullOrEmpty(text)) return;

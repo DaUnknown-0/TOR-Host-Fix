@@ -38,7 +38,6 @@ using UnityEngine;
 using TheOtherRoles;
 using TMPro;
 
-using UsefulTORStuff;
 
 namespace HostFixPlugin {
     public static class SettingsShare {

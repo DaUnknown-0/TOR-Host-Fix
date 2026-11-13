@@ -40,7 +40,6 @@ using TheOtherRoles.Modules;
 using UnityEngine;
 using Types = TheOtherRoles.CustomOption.CustomOptionType;
 
-using UsefulTORStuff;
 
 namespace HostFixPlugin {
     public static class LobbySizeLimit {
@@ -70,7 +69,7 @@ namespace HostFixPlugin {
                 OptionLimit = CustomOption.Create(
                     1378, Types.General, "Maximum Lobby Size (/size)", 15f, 15f, 25f, 1f);
                 // The option's title stays in the tables of Forgotten Fixes: its engine translates option titles.
-                UTSLocalization.BindOptionTitle(OptionLimit, "uts.lobbysize.limit_option");
+                OptionTitle.Bind(OptionLimit, "uts.lobbysize.limit_option");
                 AppDomain.CurrentDomain.SetData(MaxKey, new Func<int>(() => CurrentMax));
 
                 // Next to the role-count block of the General tab, like the impostor count options.

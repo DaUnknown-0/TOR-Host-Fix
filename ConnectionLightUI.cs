@@ -12,7 +12,6 @@ using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using UnityEngine;
-using UsefulTORStuff;
 
 namespace HostFixPlugin {
 
@@ -37,7 +36,8 @@ namespace HostFixPlugin {
         private static bool ShouldShow() {
             try {
                 var c = AmongUsClient.Instance;
-                return LobbyScreen.Exists && c != null && c.AmHost && c.NetworkMode != NetworkModes.FreePlay;
+                // the measuring is Forgotten Fixes' (every client answers its ping): without it there is nothing to show
+                return ConnectionLight.Available && LobbyScreen.Exists && c != null && c.AmHost && c.NetworkMode != NetworkModes.FreePlay;
             } catch { return false; }
         }
 
@@ -52,11 +52,49 @@ namespace HostFixPlugin {
         }
 
         public void Update() {
+            WatchForRed();
             if (root == null) return;
             if (Input.GetKeyDown(KeyCode.Escape) || !ShouldShow()) { Close(); return; }
             if (Time.realtimeSinceStartup < nextRefresh) return;
             Teardown();
             Build();
+        }
+
+        // ---- warning: a player turns red (User 2026-11-13: "warn the host before somebody drops") ----
+        // Every 5 s while hosting online, lobby or round: a player whose light turned red since the last look
+        // gets one line in the game's own notification popup, at most once per 3 minutes per player.
+        private long nextWatch;
+        private readonly HashSet<string> redNow = new HashSet<string>();
+        private readonly Dictionary<string, long> warnedAt = new Dictionary<string, long>();
+
+        [HideFromIl2Cpp]
+        private void WatchForRed() {
+            long now = Environment.TickCount64;
+            if (now < nextWatch) return;
+            nextWatch = now + 5000;
+            try {
+                var c = AmongUsClient.Instance;
+                if (!ConnectionLight.Available || c == null || !c.AmHost || c.NetworkMode == NetworkModes.FreePlay || c.allClients == null || c.allClients.Count < 2) {
+                    redNow.Clear();
+                    return;
+                }
+                var red = new HashSet<string>();
+                foreach (var r in ConnectionLight.Rows()) {
+                    if (r.Level != ConnectionLight.Level.Red) continue;
+                    red.Add(r.Name);
+                    if (redNow.Contains(r.Name)) continue;
+                    if (warnedAt.TryGetValue(r.Name, out long at) && now - at < 180000) continue;
+                    warnedAt[r.Name] = now;
+                    var hud = HudManager.Instance;
+                    if (hud != null && hud.Notifier != null)
+                        hud.Notifier.AddDisconnectMessage(HFLocalization.Tr("hostfix.connections.warn_red", r.Name.Replace("<", "").Replace(">", ""), Detail(r)));
+                    HostFixPlugin.Logger?.LogInfo($"[Connections] {r.Name} turned red: {Detail(r)}");
+                }
+                redNow.Clear();
+                redNow.UnionWith(red);
+            } catch (Exception e) {
+                HostFixPlugin.Logger?.LogWarning($"[Connections] watch failed: {e.Message}");
+            }
         }
 
         [HideFromIl2Cpp]

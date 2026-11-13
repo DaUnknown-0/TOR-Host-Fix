@@ -33,7 +33,6 @@ using System.Text.RegularExpressions;
 using BepInEx.Configuration;
 using HarmonyLib;
 using UnityEngine;
-using UsefulTORStuff;
 
 namespace HostFixPlugin;
 
@@ -178,13 +177,14 @@ internal static class StartCheck
                 catch { }
             }
 
-            // 3. the mod check of Forgotten Fixes: who lacks it or has another version
+            // 3. the mod check of Forgotten Fixes (only when the host has it): who lacks it or has another version
             try
             {
-                foreach (var cl in HostToolsFiles.Others())
-                    if (!UsefulVersionHandshake.playerVersions.ContainsKey(cl.Id))
-                        Add(list, Kind.Warn, HFLocalization.Tr("hostfix.tools.check_no_mod", HostToolsFiles.NameOf(cl.Character)));
-                string mismatch = UsefulVersionHandshake.BuildMismatchMessage();
+                if (Uts.Loaded)
+                    foreach (var cl in HostToolsFiles.Others())
+                        if (!Uts.HasMod(cl.Id))
+                            Add(list, Kind.Warn, HFLocalization.Tr("hostfix.tools.check_no_mod", HostToolsFiles.NameOf(cl.Character)));
+                string mismatch = Uts.VersionMismatch();
                 if (!string.IsNullOrWhiteSpace(mismatch))
                     foreach (var line in mismatch.Split('\n')) Add(list, Kind.Warn, line);
             }
@@ -597,11 +597,10 @@ internal static class LobbyGuard
                 string key = HostToolsFiles.KeyOf(cl.Character);
                 if (key != null && Blocked.ContainsKey(key)) { Kick(cl); continue; }
             }
-            if (warnMissingMod != null && warnMissingMod.Value && now - seenSince[cl.Id] >= ModGrace && !warned.Contains(cl.Id))
+            if (warnMissingMod != null && warnMissingMod.Value && Uts.Loaded && now - seenSince[cl.Id] >= ModGrace && !warned.Contains(cl.Id))
             {
                 warned.Add(cl.Id);
-                bool has = true;
-                try { has = UsefulVersionHandshake.playerVersions.ContainsKey(cl.Id); } catch { }
+                bool has = Uts.HasMod(cl.Id);
                 if (!has) HostToolsFiles.Chat(HFLocalization.Tr("hostfix.tools.guard_no_mod_chat", HostToolsFiles.NameOf(cl.Character)));
             }
         }

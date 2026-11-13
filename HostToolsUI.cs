@@ -2,12 +2,13 @@
 // Licensed under GPL-3.0-or-later. See LICENSE for details.
 
 /*
- * HostToolsUI - the host's panel for the new tools (lobby menu entry "Host Tools", host only), four tabs:
+ * HostToolsUI - the host's panel for the new tools (lobby menu entry "Host Tools", host only), five tabs:
  *   Start check    everything that stands in the way of a start, the blocking things first
  *   Settings log   what changed since the last round started, and the last rounds with "put back"
  *   Evening plan   the steps (preset, rounds), start and stop, where the plan stands
  *   Players        every player of the lobby with the host's note (NOTE types into the field at the top, Enter saves)
  *                  and BLOCK; the block list with UNBLOCK behind the button at the bottom
+ *   Statistics     every hosted round for good (HostStats): early deaths first, then rounds, wins, kills; per map
  * The component also drives the tools that have no screen of their own (notes on join, lobby guard, settings rescue,
  * the chat lines of the evening plan) and adds the lobby menu entries that load an offered preset.
  * VanillaUI look like the other lobby panels (the building blocks come from TOR - Forgotten Fixes).
@@ -18,7 +19,6 @@ using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using UnityEngine;
-using UsefulTORStuff;
 
 namespace HostFixPlugin;
 
@@ -28,7 +28,12 @@ public class HostToolsUI : MonoBehaviour
 
     public HostToolsUI(IntPtr ptr) : base(ptr) { }
 
-    private enum Tab { Check, Log, Plan, Players }
+    private enum Tab { Check, Log, Plan, Players, Stats }
+
+    // statistics tab
+    private HostStats.Period statsPeriod = HostStats.Period.Today;
+    private int statsSort, statsPage;
+    private const int StatsRows = 9;
 
     private GameObject root;
     private Tab tab = Tab.Check;
@@ -43,7 +48,10 @@ public class HostToolsUI : MonoBehaviour
     private string editKey, editName, buffer = "";
     private TMPro.TextMeshProUGUI fieldText;
 
-    private const float Width = 1300f, Height = 900f, Inset = 34f, RowH = 46f, RowStep = 52f;
+    // the game-look window (GameUI) is wider: its frame is drawn for about 2:1
+    private static float Width = 1300f, Height = 900f;
+    private const float Inset = 34f, RowH = 46f, RowStep = 52f;
+    private bool gameLook;
     private const int MaxNote = 90;
 
     public void Awake()
@@ -193,29 +201,52 @@ public class HostToolsUI : MonoBehaviour
             root = VanillaUI.Canvas("HostToolsUI", 9500, true);
             LobbyPanelGuard.Track(root);
             VanillaUI.Backdrop(root, Close);
-            var panel = VanillaUI.CenterPanel(root, new Vector2(Width, Height));
-            VanillaUI.Title(panel, HFLocalization.Tr("hostfix.tools.title"), 16f, 34f, VanillaUI.Amber);
-            VanillaUI.CloseButton(panel, "", Close);
 
-            // tabs
-            float x = Inset + 5f;
-            foreach (var (t, key) in new[] { (Tab.Check, "tab_check"), (Tab.Log, "tab_log"), (Tab.Plan, "tab_plan"), (Tab.Players, "tab_players") })
+            // the game's own settings window when its graphics are loaded (always in the lobby), else the drawn one
+            gameLook = GameUI.Ready;
+            GameObject panel;
+            var tabs = new[] { (Tab.Check, "tab_check"), (Tab.Log, "tab_log"), (Tab.Plan, "tab_plan"), (Tab.Players, "tab_players"), (Tab.Stats, "tab_stats") };
+            float y;
+            if (gameLook)
             {
-                var mine = t;
-                VanillaUI.Button(panel, HFLocalization.Tr("hostfix.tools." + key), new Vector2(x, -104f), new Vector2(250f, 50f),
-                                 tab == t ? VanillaUI.TealBright : VanillaUI.Grey,
-                                 () => { tab = mine; confirmKey = null; editKey = null; showBlocked = false; status = ""; Rebuild(); },
-                                 anchorMin: TL, anchorMax: TL, pivot: TL);
-                x += 260f;
+                Width = 1640f; Height = 860f;
+                panel = GameUI.Window(root, new Vector2(Width, Height), HFLocalization.Tr("hostfix.tools.title"), Close);
+                GameUI.TabStripAt(panel, -120f, 66f);
+                float tw = (Width - 150f) / tabs.Length;
+                for (int i = 0; i < tabs.Length; i++)
+                {
+                    var (t, key) = tabs[i];
+                    var mine = t;
+                    GameUI.Tab(panel, HFLocalization.Tr("hostfix.tools." + key), new Vector2(60f + i * tw, -125f), new Vector2(tw - 10f, 56f), tab == t,
+                               () => { tab = mine; confirmKey = null; editKey = null; showBlocked = false; status = ""; statsPage = 0; Rebuild(); });
+                }
+                y = -206f;
             }
-
-            float y = -176f;
+            else
+            {
+                Width = 1300f; Height = 900f;
+                panel = VanillaUI.CenterPanel(root, new Vector2(Width, Height));
+                VanillaUI.Title(panel, HFLocalization.Tr("hostfix.tools.title"), 16f, 34f, VanillaUI.Amber);
+                VanillaUI.CloseButton(panel, "", Close);
+                float x = Inset + 5f;
+                foreach (var (t, key) in tabs)
+                {
+                    var mine = t;
+                    VanillaUI.Button(panel, HFLocalization.Tr("hostfix.tools." + key), new Vector2(x, -104f), new Vector2(235f, 50f),
+                                     tab == t ? VanillaUI.TealBright : VanillaUI.Grey,
+                                     () => { tab = mine; confirmKey = null; editKey = null; showBlocked = false; status = ""; statsPage = 0; Rebuild(); },
+                                     anchorMin: TL, anchorMax: TL, pivot: TL);
+                    x += 245f;
+                }
+                y = -176f;
+            }
             switch (tab)
             {
                 case Tab.Check: BuildCheck(panel, y); break;
                 case Tab.Log: BuildLog(panel, y); break;
                 case Tab.Plan: BuildPlan(panel, y); break;
                 case Tab.Players: BuildPlayers(panel, y); break;
+                case Tab.Stats: BuildStats(panel, y); break;
             }
 
             VanillaUI.Label(panel, status, 17f, VanillaUI.Good, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 0),
@@ -432,6 +463,214 @@ public class HostToolsUI : MonoBehaviour
         VanillaUI.Button(panel, showBlocked ? HFLocalization.Tr("hostfix.tools.guard_back") : HFLocalization.Tr("hostfix.tools.guard_list", LobbyGuard.Blocked.Count),
                          new Vector2(Inset + 5f, 84f), new Vector2(360f, 50f), VanillaUI.Grey,
                          () => { showBlocked = !showBlocked; editKey = null; confirmKey = null; Rebuild(); }, anchorMin: bl, anchorMax: bl, pivot: bl);
+    }
+
+    // ---------------------------------------------------------------- statistics
+    private static readonly string[] SortKeys = { "stats_sort_early", "stats_sort_rounds", "stats_sort_wins", "stats_sort_kills" };
+
+    [HideFromIl2Cpp]
+    private static string Pct(float f) => Mathf.RoundToInt(f * 100f) + " %";
+
+    [HideFromIl2Cpp]
+    private static string Clock(float seconds) =>
+        seconds < 0 ? "-" : $"{(int)(seconds / 60)}:{(int)(seconds % 60):00}";
+
+    [HideFromIl2Cpp]
+    private List<HostStats.PlayerRow> SortedRows(List<HostStats.Entry> list)
+    {
+        var rows = HostStats.Players(list);
+        return statsSort switch
+        {
+            1 => rows.OrderByDescending(r => r.Rounds).ToList(),
+            2 => rows.OrderByDescending(r => r.WinRate).ThenByDescending(r => r.Rounds).ToList(),
+            3 => rows.OrderByDescending(r => r.Kills).ToList(),
+            // early deaths: the rate first, but a player needs a few rounds before his rate means anything
+            _ => rows.OrderByDescending(r => r.NonImp >= 3 ? r.EarlyRate : -1f).ThenByDescending(r => r.Early).ToList(),
+        };
+    }
+
+    // the statistics tab in the game's own settings look (GameUI): period tabs, one setting-style row per player
+    [HideFromIl2Cpp]
+    private void BuildStatsGame(GameObject win, float y)
+    {
+        const float L = 60f, W = 1520f;
+        var periods = new[] { (HostStats.Period.Today, "stats_today"), (HostStats.Period.Week, "stats_week"),
+                              (HostStats.Period.Month, "stats_month"), (HostStats.Period.All, "stats_all") };
+        for (int i = 0; i < periods.Length; i++)
+        {
+            var (p, key) = periods[i];
+            var mine = p;
+            GameUI.Tab(win, HFLocalization.Tr("hostfix.tools." + key), new Vector2(L + i * 205f, y), new Vector2(195f, 48f), statsPeriod == p,
+                       () => { statsPeriod = mine; statsPage = 0; Rebuild(); }, 26f);
+        }
+        GameUI.Tab(win, HFLocalization.Tr("hostfix.tools." + SortKeys[statsSort]), new Vector2(L + W - 360f, y), new Vector2(360f, 48f), false,
+                   () => { statsSort = (statsSort + 1) % SortKeys.Length; statsPage = 0; Rebuild(); }, 26f);
+        y -= 66f;
+
+        var list = HostStats.In(statsPeriod);
+        var all = HostStats.Overall(list);
+        if (all.rounds == 0)
+        {
+            GameUI.Note(win, HFLocalization.Tr("hostfix.tools.stats_none"), new Vector2(L, y - 10f), new Vector2(W, 60f), 22f);
+            return;
+        }
+        GameUI.Note(win, HFLocalization.Tr("hostfix.tools.stats_overall", all.rounds, Pct(all.earlyRate), Pct(all.impWin), Pct(all.crewWin),
+                                           Pct(all.neutralWin), Clock(all.avgLength)), new Vector2(L, y), new Vector2(W, 30f), 21f, Color.white);
+        y -= 44f;
+
+        // section bar with the pager on its right end
+        const int perPage = 6;
+        var rows = SortedRows(list);
+        int pages = Math.Max(1, (rows.Count + perPage - 1) / perPage);
+        statsPage = Math.Min(statsPage, pages - 1);
+        GameUI.Section(win, HFLocalization.Tr("hostfix.tools.stats_col_player"), new Vector2(L, y), W - (pages > 1 ? 250f : 0f), 340f);
+        if (pages > 1)
+        {
+            GameUI.Tab(win, "<", new Vector2(L + W - 230f, y - 2f), new Vector2(64f, 46f), false, () => { statsPage = Math.Max(0, statsPage - 1); Rebuild(); }, 28f);
+            GameUI.Value(win, $"{statsPage + 1}/{pages}", new Vector2(L + W - 160f, y - 2f), new Vector2(86f, 46f));
+            GameUI.Tab(win, ">", new Vector2(L + W - 66f, y - 2f), new Vector2(64f, 46f), false, () => { statsPage = Math.Min(pages - 1, statsPage + 1); Rebuild(); }, 28f);
+        }
+        y -= 54f;
+
+        // column captions over the value boxes
+        string[] caps = { "stats_col_rounds", "stats_col_early", "stats_col_first", "stats_col_deathat", "stats_col_alive", "stats_col_wins", "stats_col_kills" };
+        float[] widths = { 150f, 210f, 150f, 175f, 160f, 150f, 130f };
+        float nameW = W - widths.Sum() - widths.Length * 12f;
+        float cx = L + nameW + 12f;
+        var colX = new float[caps.Length];
+        for (int i = 0; i < caps.Length; i++)
+        {
+            colX[i] = cx;
+            var c = GameUI.Text(win, HFLocalization.Tr("hostfix.tools." + caps[i]), GameUI.BarlowItalic, 18f, new Color(0.78f, 0.78f, 0.78f),
+                                TMPro.TextAlignmentOptions.Bottom, TMPro.FontStyles.UpperCase);
+            c.enableAutoSizing = true; c.fontSizeMin = 11f; c.fontSizeMax = 18f;
+            var rt = c.rectTransform;
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0, 1);
+            rt.anchoredPosition = new Vector2(cx, y); rt.sizeDelta = new Vector2(widths[i], 26f);
+            cx += widths[i] + 12f;
+        }
+        y -= 32f;
+
+        foreach (var r in rows.Skip(statsPage * perPage).Take(perPage))
+        {
+            Color early = r.NonImp < 3 ? new Color(0.7f, 0.7f, 0.7f) : r.EarlyRate >= 0.3f ? new Color(1f, 0.42f, 0.42f)
+                        : r.EarlyRate >= 0.15f ? new Color(1f, 0.86f, 0.3f) : new Color(0.55f, 1f, 0.6f);
+            GameUI.Label(win, r.Name, new Vector2(L, y), new Vector2(nameW, 46f), null, TMPro.TextAlignmentOptions.Right, 24f);
+            string[] vals =
+            {
+                r.Imp > 0 ? $"{r.Rounds} <size=70%><color=#FF6B6B>({r.Imp})</color></size>" : r.Rounds.ToString(),
+                $"{r.Early}/{r.NonImp}  {Pct(r.EarlyRate)}", r.First.ToString(), Clock(r.AvgDeathAt),
+                r.AvgShare < 0 ? "-" : Pct(r.AvgShare), Pct(r.WinRate), r.Kills.ToString(),
+            };
+            for (int i = 0; i < vals.Length; i++)
+                GameUI.Value(win, vals[i], new Vector2(colX[i], y), new Vector2(widths[i], 46f),
+                             i == 1 ? early : i == 2 && r.First > 0 ? new Color(1f, 0.86f, 0.3f) : (Color?)null);
+            y -= 52f;
+        }
+
+        var maps = HostStats.Maps(list).Take(4).Select(m => HFLocalization.Tr("hostfix.tools.stats_map", m.Map, m.Rounds, Pct(m.EarlyRate), Clock(m.AvgLength)));
+        GameUI.Note(win, string.Join("    ·    ", maps), new Vector2(L, -Height + 104f), new Vector2(W, 28f), 19f, Color.white);
+        GameUI.Note(win, HFLocalization.Tr("hostfix.tools.stats_legend"), new Vector2(L, -Height + 72f), new Vector2(W, 50f), 15f);
+    }
+
+    [HideFromIl2Cpp]
+    private void BuildStats(GameObject panel, float y)
+    {
+        if (gameLook) { BuildStatsGame(panel, y); return; }
+        // period and sort
+        float x = Inset + 5f;
+        foreach (var (p, key) in new[] { (HostStats.Period.Today, "stats_today"), (HostStats.Period.Week, "stats_week"),
+                                         (HostStats.Period.Month, "stats_month"), (HostStats.Period.All, "stats_all") })
+        {
+            var mine = p;
+            VanillaUI.Button(panel, HFLocalization.Tr("hostfix.tools." + key), new Vector2(x, y), new Vector2(190f, 44f),
+                             statsPeriod == p ? VanillaUI.Teal : VanillaUI.Grey,
+                             () => { statsPeriod = mine; statsPage = 0; Rebuild(); }, anchorMin: TL, anchorMax: TL, pivot: TL);
+            x += 200f;
+        }
+        VanillaUI.Button(panel, HFLocalization.Tr("hostfix.tools." + SortKeys[statsSort]), new Vector2(-Inset - 5f, y), new Vector2(330f, 44f),
+                         VanillaUI.Blue, () => { statsSort = (statsSort + 1) % SortKeys.Length; statsPage = 0; Rebuild(); },
+                         anchorMin: new Vector2(1, 1), anchorMax: new Vector2(1, 1), pivot: new Vector2(1, 1));
+        y -= 58f;
+
+        var list = HostStats.In(statsPeriod);
+        var all = HostStats.Overall(list);
+        if (all.rounds == 0) { Hint(panel, HFLocalization.Tr("hostfix.tools.stats_none"), y - 6f); return; }
+        VanillaUI.Text(panel, HFLocalization.Tr("hostfix.tools.stats_overall", all.rounds, Pct(all.earlyRate), Pct(all.impWin), Pct(all.crewWin),
+                                                Pct(all.neutralWin), Clock(all.avgLength)),
+                       18f, Color.white, new Vector2(Inset + 10f, y), new Vector2(Width - 2 * Inset - 20f, 30f), TMPro.FontStyles.Bold);
+        y -= 40f;
+
+        // column heads
+        var cols = new (string key, float x, float w)[]
+        {
+            ("stats_col_player", 18f, 260f), ("stats_col_rounds", 285f, 110f), ("stats_col_early", 400f, 190f), ("stats_col_first", 595f, 130f),
+            ("stats_col_deathat", 730f, 150f), ("stats_col_alive", 885f, 130f), ("stats_col_wins", 1020f, 110f), ("stats_col_kills", 1135f, 90f),
+        };
+        var head = VanillaUI.Row(panel, y, 34f, Inset, VanillaUI.FieldLight);
+        foreach (var c in cols) RowText(head, HFLocalization.Tr("hostfix.tools." + c.key), c.x, c.w, 15f, VanillaUI.Muted, true);
+        y -= 40f;
+
+        var rows = HostStats.Players(list);
+        rows = statsSort switch
+        {
+            1 => rows.OrderByDescending(r => r.Rounds).ToList(),
+            2 => rows.OrderByDescending(r => r.WinRate).ThenByDescending(r => r.Rounds).ToList(),
+            3 => rows.OrderByDescending(r => r.Kills).ToList(),
+            // early deaths: the rate first, but a player needs a few rounds before his rate means anything
+            _ => rows.OrderByDescending(r => r.NonImp >= 3 ? r.EarlyRate : -1f).ThenByDescending(r => r.Early).ToList(),
+        };
+        int pages = Math.Max(1, (rows.Count + StatsRows - 1) / StatsRows);
+        statsPage = Math.Min(statsPage, pages - 1);
+        foreach (var r in rows.Skip(statsPage * StatsRows).Take(StatsRows))
+        {
+            var row = VanillaUI.Row(panel, y, RowH - 4f, Inset);
+            Color early = r.NonImp < 3 ? VanillaUI.Muted : r.EarlyRate >= 0.3f ? VanillaUI.Red : r.EarlyRate >= 0.15f ? VanillaUI.Yellow : VanillaUI.Good;
+            RowText(row, r.Name, cols[0].x, cols[0].w, 18f, Color.white, true);
+            RowText(row, $"{r.Rounds}" + (r.Imp > 0 ? $" <color=#FF6B6B>({r.Imp})</color>" : ""), cols[1].x, cols[1].w, 17f, Color.white);
+            RowText(row, $"{r.Early}/{r.NonImp}  {Pct(r.EarlyRate)}", cols[2].x, cols[2].w, 17f, early, true);
+            RowText(row, r.First.ToString(), cols[3].x, cols[3].w, 17f, r.First > 0 ? VanillaUI.Yellow : Color.white);
+            RowText(row, Clock(r.AvgDeathAt), cols[4].x, cols[4].w, 17f, Color.white);
+            RowText(row, r.AvgShare < 0 ? "-" : Pct(r.AvgShare), cols[5].x, cols[5].w, 17f, Color.white);
+            RowText(row, Pct(r.WinRate), cols[6].x, cols[6].w, 17f, Color.white);
+            RowText(row, r.Kills.ToString(), cols[7].x, cols[7].w, 17f, Color.white);
+            y -= RowStep - 4f;
+        }
+
+        // maps
+        var maps = HostStats.Maps(list).Take(4).Select(m => HFLocalization.Tr("hostfix.tools.stats_map", m.Map, m.Rounds, Pct(m.EarlyRate), Clock(m.AvgLength)));
+        VanillaUI.Text(panel, string.Join("   ·   ", maps), 16f, VanillaUI.Muted, new Vector2(Inset + 10f, -Height + 160f),
+                       new Vector2(Width - 2 * Inset - 20f, 30f));
+
+        var bl = new Vector2(0, 0);
+        if (pages > 1)
+        {
+            VanillaUI.Button(panel, "<", new Vector2(Inset + 5f, 84f), new Vector2(70f, 50f), VanillaUI.Grey,
+                             () => { statsPage = Math.Max(0, statsPage - 1); Rebuild(); }, anchorMin: bl, anchorMax: bl, pivot: bl);
+            VanillaUI.Label(panel, $"{statsPage + 1}/{pages}", 18f, Color.white, bl, bl, bl, new Vector2(Inset + 85f, 84f), new Vector2(90f, 50f),
+                            TMPro.TextAlignmentOptions.Center, TMPro.FontStyles.Bold);
+            VanillaUI.Button(panel, ">", new Vector2(Inset + 185f, 84f), new Vector2(70f, 50f), VanillaUI.Grey,
+                             () => { statsPage = Math.Min(pages - 1, statsPage + 1); Rebuild(); }, anchorMin: bl, anchorMax: bl, pivot: bl);
+        }
+        VanillaUI.Text(panel, HFLocalization.Tr("hostfix.tools.stats_legend"), 15f, VanillaUI.Muted, new Vector2(Inset + 280f, -Height + 130f),
+                       new Vector2(Width - 2 * Inset - 300f, 60f), TMPro.FontStyles.Italic);
+    }
+
+    /// <summary>Autotest: opens the panel on tab 0-4 (check, log, plan, players, statistics).</summary>
+    [HideFromIl2Cpp]
+    public void DiagTab(int t)
+    {
+        tab = (Tab)Mathf.Clamp(t, 0, 4);
+        if (root == null) Build(); else Rebuild();
+    }
+
+    /// <summary>Autotest: opens the panel on the statistics tab (sample: with made-up rounds, in memory only).</summary>
+    [HideFromIl2Cpp]
+    public void DiagStats(bool sample)
+    {
+        if (sample) HostStats.DiagSample();
+        tab = Tab.Stats; statsPeriod = HostStats.Period.All;
+        if (root == null) Build(); else Rebuild();
     }
 
     [HarmonyPatch(typeof(AmongUsClient), nameof(AmongUsClient.OnGameJoined))]
