@@ -1,15 +1,5 @@
 # Changelog: TOR - Host Tools (formerly TOR - Hostfix)
 
-## 1.1.1 (2026-11-13)
-
-### Vampire bite on a shielded Time Master (2026-11-13)
-- **Fix 5** (`VampireTimeMasterBite.cs`, config `[Fixes] VampireTimeMasterBite`, default on): the Vampire bites the
-  Time Master, the Time Master switches the time shield on before the bite lands. The shield blocks the bite and
-  rewinds, but TOR 4.8.0 only clears `Vampire.bitten` after a successful kill, so at the next report
-  `handleVampireBiteOnBodyReport` resolved the bite again without a shield and the Time Master died. The host now
-  sees the rewind RPC coming from the Vampire while the bite sits on the Time Master and sends TOR's own bite reset
-  to everyone. Host only, clients need nothing but TOR. A rewind caused by another attacker leaves the bite alone.
-
 ## 1.1.0 (2026-11-13)
 
 ### Statistics, game look, standalone (2026-11-13)
