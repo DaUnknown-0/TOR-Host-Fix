@@ -51,7 +51,7 @@ public class HostFixPlugin : BasePlugin
     // The public name since 2026-11-11 (before: "TOR - Hostfix"). Guid, DLL name and repository stay: the updater,
     // the mod sync, the Mod Manager and every existing config hang on them.
     public const string PluginName = "TOR - Host Tools";
-    public const string PluginVersion = "1.0.30.1";
+    public const string PluginVersion = "1.1.0";
     public static readonly System.Version Version = System.Version.Parse(PluginVersion);
 
     public static ManualLogSource Logger { get; private set; }

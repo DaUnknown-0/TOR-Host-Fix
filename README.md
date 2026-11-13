@@ -13,16 +13,18 @@ Only the host needs this mod. The plugin GUID, the DLL name (`HostFixPlugin.dll`
 1. **Host cooldown freeze**: resets `RoleDraft.isRunning` when it gets stuck at `true`, which otherwise freezes all kill cooldowns across rounds.
 2. **Host-only assignment crashes**: wraps the draft coroutine's host-only role/modifier/target assignment calls (Guesser gamemode, Lawyer target, modifiers) in a finalizer so a single exception can't kill the coroutine and leave the draft stuck.
 3. **Draft safety net**: resets a draft stuck with an empty pick order and removes disconnected pickers from it.
+4. **Snitch and an evil host**: an evil host was missing from the Snitch's meeting list, because the host's room reached every client before TOR cleared its room list. The host now sends its room again right after the meeting starts (config `[Fixes] SnitchHostRoom`, on by default).
 
-### Tools (need [TOR - Forgotten Fixes](https://github.com/DaUnknown-0/Useful-TOR-stuff) as well)
+### Tools (need only The Other Roles)
 
-The tools draw their panels with the UI building blocks of TOR - Forgotten Fixes. Without that mod (or with an older version of it) only the fixes run.
+Since 1.1.0 the tools work on their own. With [TOR - Forgotten Fixes](https://github.com/DaUnknown-0/Useful-TOR-stuff) installed they sit in its lobby menu; without it Host Tools brings its own menu tile in the lower left corner. Every window uses the game's own menu look and blocks the game's buttons behind it while it is open.
 
 - **Settings presets**: every mod option and the Among Us settings under one name, as many as you like; each preset can carry a range of lobby sizes and is suggested when the lobby fits. Moved here from Forgotten Fixes.
 - **Settings export and import**: completes TOR's copy/paste string with a file export and an import picker. Moved here from Forgotten Fixes.
 - **Web settings page**: a local page on `127.0.0.1` for editing every lobby setting in the browser. Moved here from Forgotten Fixes.
 - **Lobby size above 15**: the option "Maximum Lobby Size (/size)" lets `/size` go up to 25 (experimental). Moved here from Forgotten Fixes.
-- **Connections**: a traffic light per player from timed round trips and the drops of the evening.
+- **Statistics**: every round you host is kept (`BepInEx/config/HostTools/stats.tsv`). Per player: rounds (and how many as impostor), **early deaths** (killed by someone else before the first meeting, rated from three rounds as crew or neutral: yellow from 15 %, red from 30 %), first victim, average time of death, survival, wins and kills; plus one line per map. Today, 7 days, 30 days or all.
+- **Connections** (needs Forgotten Fixes, every player has to answer the host's ping): a traffic light per player from timed round trips and the drops of the evening, and a notice as soon as a player turns red.
 - **Start check**: one list of everything that stands in the way of a start.
 - **Settings log**: what changed since the last round, and the last ten rounds to go back to.
 - **Evening plan**: an order of presets with a number of rounds each; the next one is suggested after its rounds, nothing loads by itself.

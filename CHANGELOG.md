@@ -1,6 +1,17 @@
 # Changelog: TOR - Host Tools (formerly TOR - Hostfix)
 
-## Unreleased
+## 1.1.0 (2026-11-13)
+
+### Statistics, game look, standalone (2026-11-13)
+- **Works without TOR - Forgotten Fixes and Unknown's Collection.** No compile reference to Forgotten Fixes any more:
+  the UI building blocks are copies (`SharedVanillaUI.cs`, `SharedGameUI.cs`, `SharedModalGuard.cs`,
+  `SharedLobbyPanelGuard.cs`), the rest is in `HostShared.cs` (lobby menu: Forgotten Fixes' menu or an own corner
+  tile `HostMenuUI`; option sync: Forgotten Fixes' paced queue or TOR's own). The connection lights still need
+  Forgotten Fixes (every client answers the ping) and only show with it.
+- **Statistics tab** (`HostStats.cs`, `HostRoundRecorder.cs`): every hosted round in `BepInEx/config/HostTools/stats.tsv`;
+  early deaths, first victim, time of death, survival, wins, kills, one line per map, periods today / 7 / 30 days / all.
+- **Every window in the game's own menu look**; open windows block the game's buttons and keep the crewmate still.
+- **Connection lights**: a notice in the game's notification area when a player turns red (at most every 3 minutes).
 
 ### Snitch: evil host missing from the meeting list (2026-11-11)
 - **Fix 4 is back, rebuilt and tested with two clients** (`SnitchHostRoom.cs`, config `[Fixes] SnitchHostRoom`,
