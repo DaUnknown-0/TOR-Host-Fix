@@ -51,7 +51,7 @@ public class HostFixPlugin : BasePlugin
     // The public name since 2026-11-11 (before: "TOR - Hostfix"). Guid, DLL name and repository stay: the updater,
     // the mod sync, the Mod Manager and every existing config hang on them.
     public const string PluginName = "TOR - Host Tools";
-    public const string PluginVersion = "1.1.0.1";
+    public const string PluginVersion = "1.1.0.2";
     public static readonly System.Version Version = System.Version.Parse(PluginVersion);
 
     public static ManualLogSource Logger { get; private set; }
@@ -366,6 +366,7 @@ public class HostFixPlugin : BasePlugin
                 bool isRunning = (bool)RoleDraftIsRunningField.GetValue(null);
                 if (!isRunning)
                 {
+                    DraftStallGuard.Reset();
                     _stuckTimer = 0f;
                     _loggedReset = false;
                     return;
@@ -398,6 +399,8 @@ public class HostFixPlugin : BasePlugin
                 {
                     // Draft has picks remaining — check for disconnected current picker
                     _stuckTimer = 0f;
+                    // Connected picker whose pick never arrives (20.11.2026): host picks a stand-in role.
+                    DraftStallGuard.Check(pickOrder, elapsed);
                     _disconnectCheckTimer += elapsed;
                     if (_disconnectCheckTimer >= 3f)
                     {
