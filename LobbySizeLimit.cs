@@ -154,6 +154,27 @@ namespace HostFixPlugin {
                 $"MaxPlayers now {opts.MaxPlayers}, clients {AmongUsClient.Instance.allClients.Count}.");
         }
 
+        // ---- the create-game screen after a raised size ---------------------------------------
+        // A size above 15 stays in the saved host options. Vanilla's CreateOptionsPicker.Refresh looks the impostor limit
+        // up in a table indexed by MaxPlayers (GameAssembly 4.7.0: bounds check right after GetTargetOptions), so 16..25
+        // threw IndexOutOfRangeException on every menu build and the rest of Refresh (impostor, player count, language
+        // and map buttons) never ran. The screen only offers 4..15 and TOR forces 15 when hosting anyway, so the menu
+        // copy is put back to 15; "/size" raises it again in the lobby.
+        [HarmonyPatch(typeof(CreateOptionsPicker), nameof(CreateOptionsPicker.Refresh))]
+        private static class CreateMenuClampPatch {
+            public static void Prefix(CreateOptionsPicker __instance) {
+                try {
+                    var opts = __instance.GetTargetOptions();
+                    if (opts == null || opts.MaxPlayers <= VanillaMax) return;
+                    HostFixPlugin.Logger?.LogInfo(
+                        $"[LobbySizeLimit] create-game screen: saved MaxPlayers {opts.MaxPlayers} reset to {VanillaMax} (vanilla menu only knows 4..15).");
+                    opts.SetInt(AmongUs.GameOptions.Int32OptionNames.MaxPlayers, VanillaMax);
+                } catch (Exception e) {
+                    HostFixPlugin.Logger?.LogWarning($"[LobbySizeLimit] create-menu clamp failed: {e.Message}");
+                }
+            }
+        }
+
         // ---- keep the raised size alive -------------------------------------------------------
 
         [HarmonyPatch(typeof(GameStartManager), nameof(GameStartManager.Update))]
